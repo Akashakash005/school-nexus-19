@@ -309,21 +309,19 @@ export default function ClassesPage() {
         {/* Class Distribution by Grade */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Class Distribution by Grade</h2>
-          <div className="h-[400px] overflow-y-auto pr-2">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[...Array(12)].map((_, i) => {
-                const grade = (i + 1).toString();
-                const gradeClasses = classData.filter(cls => cls.name.includes(`Class ${grade}`));
-                const totalStudents = gradeClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
-                
-                return (
-                  <div key={grade} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-medium">Grade {grade}</h3>
-                      <Badge variant="outline">{gradeClasses.length} classes</Badge>
-                    </div>
-                    <p className="text-2xl font-bold">{totalStudents} students</p>
-                    <div className="mt-2 text-sm text-muted-foreground max-h-[150px] overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {["8", "9", "10"].map((grade) => {
+              const gradeClasses = classData.filter(cls => cls.name.includes(`Class ${grade}`));
+              const totalStudents = gradeClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
+              
+              return (
+                <div key={grade} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium">Grade {grade}</h3>
+                    <Badge variant="outline">{gradeClasses.length} classes</Badge>
+                  </div>
+                  <p className="text-2xl font-bold">{totalStudents} students</p>
+                  <div className="mt-2 text-sm text-muted-foreground">
                     {gradeClasses.map(cls => {
                       // Extract section from class name (e.g., "Class 8A" -> "A")
                       const section = cls.section;
