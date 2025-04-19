@@ -41,36 +41,37 @@ export default function ClassDetailPage() {
     queryKey: ["/api/classes", grade, section],
     queryFn: async () => {
       try {
-        const res = await apiRequest(
-          "GET", 
-          `/api/classes/${grade}/${section}`
+        // First get all classes
+        const res = await apiRequest("GET", `/api/schools/1/classes`);
+        if (!res.ok) throw new Error("Failed to fetch classes");
+        const classes = await res.json();
+        
+        // Find the specific class
+        const classData = classes.find(c => 
+          c.grade === grade && c.section === section
         );
-        if (!res.ok) throw new Error("Failed to fetch class details");
-        return await res.json();
+        
+        if (!classData) {
+          throw new Error("Class not found");
+        }
+        
+        return classData;
       } catch (error) {
         console.error("Error fetching class:", error);
-        // For demo purposes, return mock data if API fails
-        return {
-          id: 1,
-          grade: grade,
-          section: section,
-          name: `Class ${grade}${section}`,
-          classTeacherId: 1,
-          classTeacherName: "John Doe",
-          studentCount: 42,
-        };
+        throw error;
       }
     }
   });
 
   // Fetch students for this class
   const { data: students, isLoading: isLoadingStudents } = useQuery({
-    queryKey: ["/api/students/class", grade, section],
+    queryKey: ["/api/students/class", classData?.id],
+    enabled: !!classData?.id,
     queryFn: async () => {
       try {
         const res = await apiRequest(
           "GET", 
-          `/api/students/class/${grade}/${section}`
+          `/api/classes/${classData.id}/students`
         );
         if (!res.ok) throw new Error("Failed to fetch students");
         return await res.json();
