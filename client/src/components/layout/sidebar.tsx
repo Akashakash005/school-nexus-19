@@ -46,7 +46,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
 
   // Get user's display name (email for now)
   const displayName = user?.email ? user.email.split('@')[0] : 'User';
-  
+
   // Classes for navigation items
   const baseNavClass = "flex items-center px-4 py-2 text-sm transition-colors";
   const activeNavClass = `${baseNavClass} bg-blue-600 text-white font-medium`;
@@ -64,7 +64,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
         <School className="mr-2 h-6 w-6 text-blue-200" />
         <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">School Manager</h1>
       </div>
-      
+
       {/* User Profile Summary */}
       <div className="p-4 flex items-center border-b border-blue-700/50">
         <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-inner">
@@ -75,40 +75,40 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           <p className="text-xs text-blue-200">{user?.role.replace('_', ' ')}</p>
         </div>
       </div>
-      
+
       {/* Navigation Links */}
       <ScrollArea className="flex-1">
         <nav className="py-4">
           <div className="px-4 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">Main</div>
-          
+
           <Link href="/">
             <a className={location === '/' ? activeNavClass : inactiveNavClass}>
               <Home className="mr-3 h-4 w-4" />
               <span>Dashboard</span>
             </a>
           </Link>
-          
+
           <Link href="/profile">
             <a className={location === '/profile' ? activeNavClass : inactiveNavClass}>
               <User className="mr-3 h-4 w-4" />
               <span>Profile</span>
             </a>
           </Link>
-          
+
           {/* Super Admin Navigation */}
           {user?.role === 'super_admin' && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 System Management
               </div>
-              
+
               <Link href="/schools">
                 <a className={location === '/schools' ? activeNavClass : inactiveNavClass}>
                   <Building className="mr-3 h-4 w-4" />
                   <span>Schools</span>
                 </a>
               </Link>
-              
+
               <Link href="/school-admins">
                 <a className={location === '/school-admins' ? activeNavClass : inactiveNavClass}>
                   <UserCog className="mr-3 h-4 w-4" />
@@ -117,14 +117,14 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
               </Link>
             </>
           )}
-          
+
           {/* School Admin & Teacher Navigation */}
           {(user?.role === 'school_admin' || user?.role === 'teacher') && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 School Management
               </div>
-              
+
               {user?.role === 'school_admin' && (
                 <Link href="/staff">
                   <a className={location === '/staff' ? activeNavClass : inactiveNavClass}>
@@ -133,35 +133,35 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
                   </a>
                 </Link>
               )}
-              
+
               <Link href="/students">
                 <a className={location === '/students' ? activeNavClass : inactiveNavClass}>
                   <School className="mr-3 h-4 w-4" />
                   <span>Students</span>
                 </a>
               </Link>
-              
+
               <Link href="/classes">
                 <a className={location === '/classes' ? activeNavClass : inactiveNavClass}>
                   <BookOpen className="mr-3 h-4 w-4" />
                   <span>Classes</span>
                 </a>
               </Link>
-              
+
               <Link href="/subjects">
                 <a className={location === '/subjects' ? activeNavClass : inactiveNavClass}>
                   <BookOpen className="mr-3 h-4 w-4" />
                   <span>Subjects</span>
                 </a>
               </Link>
-              
+
               <Link href="/attendance">
                 <a className={location === '/attendance' ? activeNavClass : inactiveNavClass}>
                   <Calendar className="mr-3 h-4 w-4" />
                   <span>Attendance</span>
                 </a>
               </Link>
-              
+
               {user?.role === 'school_admin' && (
                 <>
                   <Link href="/fees">
@@ -170,53 +170,53 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
                       <span>Fees</span>
                     </a>
                   </Link>
-                  
+
                   <Link href="/bills">
                     <a className={location === '/bills' ? activeNavClass : inactiveNavClass}>
                       <FileText className="mr-3 h-4 w-4" />
                       <span>Bills</span>
                     </a>
                   </Link>
+                  <Link href="/messages">
+                    <a className={location === '/messages' ? activeNavClass : inactiveNavClass}>
+                      <MessageSquare className="mr-3 h-4 w-4" />
+                      <span>Messages</span>
+                    </a>
+                  </Link>
                 </>
               )}
-              
-              <Link href="/messages">
-                <a className={location === '/messages' ? activeNavClass : inactiveNavClass}>
-                  <MessageSquare className="mr-3 h-4 w-4" />
-                  <span>Messages</span>
-                </a>
-              </Link>
+
             </>
           )}
-          
+
           {/* Student Navigation */}
           {user?.role === 'student' && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 Academic
               </div>
-              
+
               <Link href="/attendance">
                 <a className={location === '/attendance' ? activeNavClass : inactiveNavClass}>
                   <Calendar className="mr-3 h-4 w-4" />
                   <span>Attendance</span>
                 </a>
               </Link>
-              
+
               <Link href="/classes">
                 <a className={location === '/classes' ? activeNavClass : inactiveNavClass}>
                   <BookOpen className="mr-3 h-4 w-4" />
                   <span>Classes & Subjects</span>
                 </a>
               </Link>
-              
+
               <Link href="/fees">
                 <a className={location === '/fees' ? activeNavClass : inactiveNavClass}>
                   <DollarSign className="mr-3 h-4 w-4" />
                   <span>Fees</span>
                 </a>
               </Link>
-              
+
               <Link href="/messages">
                 <a className={location === '/messages' ? activeNavClass : inactiveNavClass}>
                   <MessageSquare className="mr-3 h-4 w-4" />
@@ -225,35 +225,35 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
               </Link>
             </>
           )}
-          
+
           {/* Parent Navigation */}
           {user?.role === 'parent' && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 Child Information
               </div>
-              
+
               <Link href="/students">
                 <a className={location === '/students' ? activeNavClass : inactiveNavClass}>
                   <School className="mr-3 h-4 w-4" />
                   <span>My Children</span>
                 </a>
               </Link>
-              
+
               <Link href="/attendance">
                 <a className={location === '/attendance' ? activeNavClass : inactiveNavClass}>
                   <Calendar className="mr-3 h-4 w-4" />
                   <span>Attendance</span>
                 </a>
               </Link>
-              
+
               <Link href="/fees">
                 <a className={location === '/fees' ? activeNavClass : inactiveNavClass}>
                   <DollarSign className="mr-3 h-4 w-4" />
                   <span>Fees</span>
                 </a>
               </Link>
-              
+
               <Link href="/messages">
                 <a className={location === '/messages' ? activeNavClass : inactiveNavClass}>
                   <MessageSquare className="mr-3 h-4 w-4" />
@@ -264,7 +264,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           )}
         </nav>
       </ScrollArea>
-      
+
       {/* Logout Button */}
       <div className="p-4 border-t border-blue-700/50">
         <Button 
@@ -277,7 +277,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           {logoutMutation.isPending ? "Logging out..." : "Logout"}
         </Button>
       </div>
-      
+
       {/* Mobile close button (if provided) */}
       {isMobile && onClose && (
         <div className="p-4 border-t border-blue-700/50">

@@ -36,6 +36,7 @@ function Router() {
       <ProtectedRoute path="/attendance" component={AttendancePage} />
       <ProtectedRoute path="/fees" component={FeesPage} />
       <ProtectedRoute path="/bills" component={BillsPage} />
+      <ProtectedRoute path="/messages" component={MessagesPage} />
 
       {/* Fallback to 404 */}
       <Route component={NotFound} />
