@@ -33,10 +33,22 @@ async function comparePasswords(supplied: string, stored: string) {
 
 // User registration schema with validation
 const registrationSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["super_admin", "school_admin", "teacher", "student", "parent"]),
-});
+  confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"),
+  role: z.enum(["super_admin", "school_admin"]),
+  schoolName: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+}).refine(
+  (data) => !(data.role === "school_admin" && !data.schoolName),
+  {
+    message: "School name is required for school admin registration",
+    path: ["schoolName"],
+  }
+);
 
 // Set up authentication middleware and routes
 export function setupAuth(app: Express) {
@@ -107,12 +119,34 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already in use" });
       }
 
+      // Remove confirmPassword as it's not needed in the database
+      const { confirmPassword, schoolName, ...userData } = validatedData;
+
       // Create new user with hashed password
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(userData.password);
       const newUser = await storage.createUser({
-        ...validatedData,
+        ...userData,
         password: hashedPassword,
       });
+
+      // Handle school admin registration with school creation
+      if (userData.role === "school_admin" && schoolName) {
+        // Create a new school for the school admin
+        const school = await storage.createSchool({
+          name: schoolName,
+          address: "", // These will be updated later by the admin
+          contact_email: userData.email,
+          contact_phone: "",
+        });
+
+        // Create school_admin record linking the user and school
+        await storage.createSchoolAdmin({
+          user_id: newUser.id,
+          school_id: school.id,
+          full_name: userData.name,
+          phone_number: "", // This will be updated later
+        });
+      }
 
       // Auto-login after registration
       req.login(newUser, (err) => {

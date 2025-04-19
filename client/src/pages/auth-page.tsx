@@ -44,11 +44,17 @@ const loginSchema = z.object({
 
 // Registration form schema
 const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["super_admin", "school_admin", "teacher", "student", "parent"], {
+  confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"),
+  role: z.enum(["super_admin", "school_admin"], {
     required_error: "Please select a role",
   }),
+  schoolName: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -81,9 +87,12 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
-      role: "student",
+      confirmPassword: "",
+      role: "super_admin",
+      schoolName: "",
     },
   });
 
@@ -165,6 +174,19 @@ export default function AuthPage() {
                   <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                     <FormField
                       control={registerForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -191,6 +213,19 @@ export default function AuthPage() {
                     />
                     <FormField
                       control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
                       name="role"
                       render={({ field }) => (
                         <FormItem>
@@ -207,15 +242,28 @@ export default function AuthPage() {
                             <SelectContent>
                               <SelectItem value="super_admin">Super Admin</SelectItem>
                               <SelectItem value="school_admin">School Admin</SelectItem>
-                              <SelectItem value="teacher">Teacher</SelectItem>
-                              <SelectItem value="student">Student</SelectItem>
-                              <SelectItem value="parent">Parent</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    {/* Conditionally show school name field for school admin */}
+                    {registerForm.watch("role") === "school_admin" && (
+                      <FormField
+                        control={registerForm.control}
+                        name="schoolName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>School Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ABC School" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full" 
