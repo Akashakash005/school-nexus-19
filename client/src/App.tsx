@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/profile-page";
 import StaffPage from "@/pages/staff-page";
 import StudentsPage from "@/pages/students-page";
 import ClassesPage from "@/pages/classes-page";
+import ClassDetailPage from "@/pages/class-detail-page";
 import SubjectsPage from "@/pages/subjects-page";
 import AttendancePage from "@/pages/attendance-page";
 import FeesPage from "@/pages/fees-page";
@@ -29,6 +30,7 @@ function Router() {
       <ProtectedRoute path="/staff" component={StaffPage} />
       <ProtectedRoute path="/students" component={StudentsPage} />
       <ProtectedRoute path="/classes" component={ClassesPage} />
+      <ProtectedRoute path="/classes/:gradeId/:sectionId" component={ClassDetailPage} />
       <ProtectedRoute path="/subjects" component={SubjectsPage} />
       <ProtectedRoute path="/attendance" component={AttendancePage} />
       <ProtectedRoute path="/fees" component={FeesPage} />

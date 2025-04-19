@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/layout/dashboard-layout";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,7 @@ const sampleTeachers = [
  */
 export default function ClassesPage() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [classData, setClassData] = useState(sampleClassData);
@@ -320,12 +322,21 @@ export default function ClassesPage() {
                   </div>
                   <p className="text-2xl font-bold">{totalStudents} students</p>
                   <div className="mt-2 text-sm text-muted-foreground">
-                    {gradeClasses.map(cls => (
-                      <div key={cls.id} className="flex justify-between">
-                        <span>{cls.name}</span>
-                        <span>{cls.studentCount} students</span>
-                      </div>
-                    ))}
+                    {gradeClasses.map(cls => {
+                      // Extract section from class name (e.g., "Class 8A" -> "A")
+                      const section = cls.section;
+                      
+                      return (
+                        <div 
+                          key={cls.id} 
+                          className="flex justify-between p-2 my-1 bg-blue-50 rounded-md cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+                          onClick={() => navigate(`/classes/${grade}/${section}`)}
+                        >
+                          <span className="font-medium">{cls.name}</span>
+                          <span>{cls.studentCount} students</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
