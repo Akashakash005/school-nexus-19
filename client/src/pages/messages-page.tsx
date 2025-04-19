@@ -4,10 +4,14 @@ import DashboardLayout from "@/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Message } from "@shared/schema";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 const columns = [
   {
@@ -31,6 +35,12 @@ const columns = [
 
 export default function MessagesPage() {
   const [search, setSearch] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [content, setContent] = useState("");
+  const [receiverRole, setReceiverRole] = useState("");
+  const [messageType, setMessageType] = useState("announcement");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: messages = [], isLoading } = useQuery<Message[]>({
     queryKey: ["messages"],
@@ -41,9 +51,58 @@ export default function MessagesPage() {
     },
   });
 
+  const createMessage = useMutation({
+    mutationFn: async (data: { content: string; receiver_role: string; message_type: string }) => {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          school_id: 1, // Using hardcoded school ID for demo
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to send message");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      setIsDialogOpen(false);
+      setContent("");
+      setReceiverRole("");
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredMessages = messages.filter((message) =>
     message.content.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleSubmit = () => {
+    if (!content || !receiverRole) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createMessage.mutate({
+      content,
+      receiver_role: receiverRole,
+      message_type: messageType,
+    });
+  };
 
   return (
     <DashboardLayout title="Messages">
@@ -51,7 +110,7 @@ export default function MessagesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Messages</CardTitle>
-            <Button>
+            <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               New Message
             </Button>
@@ -73,6 +132,58 @@ export default function MessagesPage() {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send New Message</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Receiver</label>
+                <Select value={receiverRole} onValueChange={setReceiverRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select receiver" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="teacher">All Teachers</SelectItem>
+                    <SelectItem value="student">All Students</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Message Type</label>
+                <Select value={messageType} onValueChange={setMessageType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="announcement">Announcement</SelectItem>
+                    <SelectItem value="notice">Notice</SelectItem>
+                    <SelectItem value="personal">Personal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Message</label>
+                <Textarea
+                  placeholder="Type your message here..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={createMessage.isPending}>
+                {createMessage.isPending ? "Sending..." : "Send Message"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
