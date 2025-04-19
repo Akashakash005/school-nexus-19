@@ -45,6 +45,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 // Student form schema
 const studentFormSchema = z.object({
   email: z.string().email("Please enter a valid email"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   gender: z.enum(["male", "female", "other"], {
     required_error: "Please select a gender",
@@ -56,6 +58,7 @@ const studentFormSchema = z.object({
     required_error: "Please select a class",
   }),
   parentId: z.string().optional(),
+  parentContact: z.string().min(10, "Please enter a valid parent contact number"),
   admissionDate: z.date({
     required_error: "Admission date is required",
   }),
@@ -68,11 +71,13 @@ const sampleStudentData = [
   {
     id: 1,
     fullName: "Alex Johnson",
+    username: "alex.j",
     email: "alex.johnson@school.com",
     gender: "male",
     dob: new Date("2012-05-15"),
     className: "Class 9A",
     parentName: "Robert Johnson",
+    parentContact: "555-123-4567",
     admissionDate: new Date("2023-03-15"),
     status: "active",
   },
@@ -124,13 +129,13 @@ const sampleStudentData = [
 
 // Sample classes for dropdown
 const sampleClasses = [
-  { id: "1", name: "Class 8A" },
-  { id: "2", name: "Class 8B" },
-  { id: "3", name: "Class 8C" },
-  { id: "4", name: "Class 9A" },
-  { id: "5", name: "Class 9B" },
-  { id: "6", name: "Class 10A" },
-  { id: "7", name: "Class 10B" },
+  { id: "1", grade: "8", section: "A", name: "Class 8A" },
+  { id: "2", grade: "8", section: "B", name: "Class 8B" },
+  { id: "3", grade: "8", section: "C", name: "Class 8C" },
+  { id: "4", grade: "9", section: "A", name: "Class 9A" },
+  { id: "5", grade: "9", section: "B", name: "Class 9B" },
+  { id: "6", grade: "10", section: "A", name: "Class 10A" },
+  { id: "7", grade: "10", section: "B", name: "Class 10B" },
 ];
 
 // Sample parents for dropdown
@@ -160,11 +165,14 @@ export default function StudentsPage() {
     resolver: zodResolver(studentFormSchema),
     defaultValues: {
       email: "",
+      username: "",
+      password: "",
       fullName: "",
       gender: "male",
       dob: undefined,
       classId: "",
       parentId: "",
+      parentContact: "",
       admissionDate: new Date(),
     }
   });
@@ -183,11 +191,14 @@ export default function StudentsPage() {
     
     form.reset({
       email: student.email,
+      username: student.username || '', // Handle existing data without username
+      password: '', // Don't populate password on edit
       fullName: student.fullName,
       gender: student.gender as any,
       dob: student.dob,
       classId: classId,
       parentId: parentId,
+      parentContact: student.parentContact || '', // Handle existing data without parentContact
       admissionDate: student.admissionDate,
     });
     setIsDialogOpen(true);
@@ -442,6 +453,34 @@ export default function StudentsPage() {
                       
                       <FormField
                         control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input placeholder="johndoe123" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
                         name="email"
                         render={({ field }) => (
                           <FormItem>
@@ -570,6 +609,20 @@ export default function StudentsPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="parentContact"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Parent Contact</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Parent phone number" {...field} />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}

@@ -38,6 +38,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 // Staff form schema
 const staffFormSchema = z.object({
   email: z.string().email("Please enter a valid email"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   phoneNumber: z.string().min(10, "Please enter a valid phone number"),
   subject: z.string().min(1, "Subject specialization is required"),
@@ -115,6 +117,8 @@ export default function StaffPage() {
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
       email: "",
+      username: "",
+      password: "",
       fullName: "",
       phoneNumber: "",
       subject: "",
@@ -326,6 +330,34 @@ export default function StaffPage() {
                             <FormLabel>Full Name</FormLabel>
                             <FormControl>
                               <Input placeholder="John Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input placeholder="johndoe123" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
