@@ -16,7 +16,8 @@ import SubjectsPage from "@/pages/subjects-page";
 import AttendancePage from "@/pages/attendance-page";
 import FeesPage from "@/pages/fees-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import BillsPage from "@/pages/bills-page"; // Import the BillsPage component
+import BillsPage from "@/pages/bills-page";
+import MessagesPage from "@/pages/messages-page";
 
 // Main router component
 function Router() {
