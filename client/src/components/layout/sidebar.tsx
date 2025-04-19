@@ -49,8 +49,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
   
   // Classes for navigation items
   const baseNavClass = "flex items-center px-4 py-2 text-sm transition-colors";
-  const activeNavClass = `${baseNavClass} bg-primary-800 text-white`;
-  const inactiveNavClass = `${baseNavClass} text-white/80 hover:bg-primary-600`;
+  const activeNavClass = `${baseNavClass} bg-blue-600 text-white font-medium`;
+  const inactiveNavClass = `${baseNavClass} text-slate-100 hover:bg-blue-700/70`;
 
   // If sidebar should be hidden on mobile
   if (isMobile && !mobileOpen) {
@@ -58,28 +58,28 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
   }
 
   return (
-    <div className={`${isMobile ? 'fixed inset-y-0 left-0 z-30' : 'flex'} flex-col w-64 bg-primary-700 text-white`}>
+    <div className={`${isMobile ? 'fixed inset-y-0 left-0 z-30' : 'flex'} flex-col w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white shadow-lg`}>
       {/* Logo & App Title */}
-      <div className="p-4 flex items-center justify-center border-b border-primary-600">
-        <School className="mr-2 h-6 w-6" />
-        <h1 className="text-xl font-bold">School Manager</h1>
+      <div className="p-4 flex items-center justify-center border-b border-blue-700/50">
+        <School className="mr-2 h-6 w-6 text-blue-200" />
+        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">School Manager</h1>
       </div>
       
       {/* User Profile Summary */}
-      <div className="p-4 flex items-center border-b border-primary-600">
-        <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center">
-          <span className="font-medium">{displayName.charAt(0).toUpperCase()}</span>
+      <div className="p-4 flex items-center border-b border-blue-700/50">
+        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-inner">
+          <span className="font-medium text-white">{displayName.charAt(0).toUpperCase()}</span>
         </div>
         <div className="ml-3">
-          <p className="font-medium">{displayName}</p>
-          <p className="text-xs text-primary-200">{user?.role.replace('_', ' ')}</p>
+          <p className="font-medium text-white">{displayName}</p>
+          <p className="text-xs text-blue-200">{user?.role.replace('_', ' ')}</p>
         </div>
       </div>
       
       {/* Navigation Links */}
       <ScrollArea className="flex-1">
         <nav className="py-4">
-          <div className="px-4 mb-2 text-xs font-semibold text-primary-200 uppercase">Main</div>
+          <div className="px-4 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">Main</div>
           
           <Link href="/">
             <a className={location === '/' ? activeNavClass : inactiveNavClass}>
@@ -98,7 +98,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           {/* Super Admin Navigation */}
           {user?.role === 'super_admin' && (
             <>
-              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-primary-200 uppercase">
+              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 System Management
               </div>
               
@@ -121,7 +121,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           {/* School Admin & Teacher Navigation */}
           {(user?.role === 'school_admin' || user?.role === 'teacher') && (
             <>
-              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-primary-200 uppercase">
+              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 School Management
               </div>
               
@@ -192,7 +192,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           {/* Student Navigation */}
           {user?.role === 'student' && (
             <>
-              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-primary-200 uppercase">
+              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 Academic
               </div>
               
@@ -229,7 +229,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
           {/* Parent Navigation */}
           {user?.role === 'parent' && (
             <>
-              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-primary-200 uppercase">
+              <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 Child Information
               </div>
               
