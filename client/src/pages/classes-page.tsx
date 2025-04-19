@@ -114,7 +114,7 @@ export default function ClassesPage() {
   const [editingClass, setEditingClass] = useState<typeof sampleClassData[0] | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<number | null>(null);
-  
+
   // Initialize form
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -124,18 +124,18 @@ export default function ClassesPage() {
       classTeacherId: "",
     }
   });
-  
+
   // Set form values when editing
   const openEditDialog = (classItem: typeof sampleClassData[0]) => {
     setEditingClass(classItem);
-    
+
     // Find the teacher ID based on teacher name
     const teacherItem = sampleTeachers.find(t => t.name === classItem.classTeacherName);
     const teacherId = teacherItem ? teacherItem.id : "";
-    
+
     // Extract grade from class name (e.g., "Class 8A" -> "8")
     const grade = classItem.name.split(" ")[1].charAt(0);
-    
+
     form.reset({
       grade: grade,
       section: classItem.section,
@@ -143,7 +143,7 @@ export default function ClassesPage() {
     });
     setIsDialogOpen(true);
   };
-  
+
   // Reset form when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
@@ -152,19 +152,19 @@ export default function ClassesPage() {
     }
     setIsDialogOpen(open);
   };
-  
+
   // Handle form submission for creating/editing classes
   const onSubmit = (data: ClassFormValues) => {
     setIsSubmitting(true);
-    
+
     setTimeout(() => {
       // Get teacher name from teacher ID
       const selectedTeacher = sampleTeachers.find(t => t.id === data.classTeacherId);
       const teacherName = selectedTeacher ? selectedTeacher.name : "";
-      
+
       // Create class name from grade and section
       const className = `Class ${data.grade}${data.section}`;
-      
+
       if (editingClass) {
         // Update existing class
         setClassData(classData.map(cls => 
@@ -198,20 +198,20 @@ export default function ClassesPage() {
           description: `${className} has been added successfully.`,
         });
       }
-      
+
       setIsSubmitting(false);
       setIsDialogOpen(false);
       form.reset();
       setEditingClass(null);
     }, 1000);
   };
-  
+
   // Handle class deletion
   const handleDelete = (id: number) => {
     setClassToDelete(id);
     setIsDeleteModalOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (classToDelete !== null) {
       // Delete class
@@ -224,7 +224,7 @@ export default function ClassesPage() {
       setClassToDelete(null);
     }
   };
-  
+
   // DataTable columns configuration
   const columns = [
     {
@@ -278,7 +278,7 @@ export default function ClassesPage() {
               <p className="text-3xl font-bold">{classData.length}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">Total Students</CardTitle>
@@ -290,7 +290,7 @@ export default function ClassesPage() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">Average Class Size</CardTitle>
@@ -305,7 +305,7 @@ export default function ClassesPage() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Class Distribution by Grade */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Class Distribution by Grade</h2>
@@ -313,7 +313,7 @@ export default function ClassesPage() {
             {Array.from(new Set(classData.map(cls => cls.name.match(/\d+/)?.[0] || ''))).sort((a, b) => Number(a) - Number(b)).map((grade) => {
               const gradeClasses = classData.filter(cls => cls.name.includes(`Class ${grade}`));
               const totalStudents = gradeClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
-              
+
               return (
                 <div key={grade} className="border rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
@@ -325,7 +325,7 @@ export default function ClassesPage() {
                     {gradeClasses.map(cls => {
                       // Extract section from class name (e.g., "Class 8A" -> "A")
                       const section = cls.section;
-                      
+
                       return (
                         <div 
                           key={cls.id} 
@@ -343,7 +343,7 @@ export default function ClassesPage() {
             })}
           </div>
         </div>
-        
+
         {/* Classes Table with Add Class Button */}
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex justify-between items-center mb-6">
@@ -396,7 +396,7 @@ export default function ClassesPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="section"
@@ -424,7 +424,7 @@ export default function ClassesPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="classTeacherId"
@@ -463,7 +463,7 @@ export default function ClassesPage() {
               </DialogContent>
             </Dialog>
           </div>
-          
+
           <DataTable 
             data={classData}
             columns={columns}
@@ -475,7 +475,7 @@ export default function ClassesPage() {
           />
         </div>
       </div>
-      
+
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent>
