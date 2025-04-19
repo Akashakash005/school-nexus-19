@@ -233,11 +233,15 @@ export default function StudentsPage() {
             ? { 
                 ...student, 
                 fullName: data.fullName,
+                username: data.username,
+                // Don't update password if it's empty (on edit)
+                ...(data.password ? { password: data.password } : {}),
                 email: data.email,
                 gender: data.gender,
                 dob: data.dob,
                 className: className,
                 parentName: parentName,
+                parentContact: data.parentContact,
                 admissionDate: data.admissionDate,
               } 
             : student
@@ -253,11 +257,14 @@ export default function StudentsPage() {
           {
             id: studentData.length + 1,
             fullName: data.fullName,
+            username: data.username,
+            password: data.password, // Store password for demo purposes
             email: data.email,
             gender: data.gender,
             dob: data.dob,
             className: className,
             parentName: parentName,
+            parentContact: data.parentContact,
             admissionDate: data.admissionDate,
             status: "active",
           }

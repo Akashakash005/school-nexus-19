@@ -37,7 +37,7 @@ import { Edit, FolderPlus, Trash, Users } from "lucide-react";
 
 // Class form schema
 const classFormSchema = z.object({
-  name: z.string().min(2, "Class name must be at least 2 characters"),
+  grade: z.string().min(1, "Grade is required"),
   section: z.string().min(1, "Section is required"),
   classTeacherId: z.string().optional(),
 });
@@ -117,7 +117,7 @@ export default function ClassesPage() {
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
-      name: "",
+      grade: "",
       section: "",
       classTeacherId: "",
     }
@@ -131,8 +131,11 @@ export default function ClassesPage() {
     const teacherItem = sampleTeachers.find(t => t.name === classItem.classTeacherName);
     const teacherId = teacherItem ? teacherItem.id : "";
     
+    // Extract grade from class name (e.g., "Class 8A" -> "8")
+    const grade = classItem.name.split(" ")[1].charAt(0);
+    
     form.reset({
-      name: classItem.name,
+      grade: grade,
       section: classItem.section,
       classTeacherId: teacherId,
     });
@@ -157,13 +160,16 @@ export default function ClassesPage() {
       const selectedTeacher = sampleTeachers.find(t => t.id === data.classTeacherId);
       const teacherName = selectedTeacher ? selectedTeacher.name : "";
       
+      // Create class name from grade and section
+      const className = `Class ${data.grade}${data.section}`;
+      
       if (editingClass) {
         // Update existing class
         setClassData(classData.map(cls => 
           cls.id === editingClass.id 
             ? { 
                 ...cls, 
-                name: data.name,
+                name: className,
                 section: data.section,
                 classTeacherName: teacherName,
               } 
@@ -171,7 +177,7 @@ export default function ClassesPage() {
         ));
         toast({
           title: "Class Updated",
-          description: `${data.name} has been updated successfully.`,
+          description: `${className} has been updated successfully.`,
         });
       } else {
         // Create new class
@@ -179,7 +185,7 @@ export default function ClassesPage() {
           ...classData,
           {
             id: classData.length + 1,
-            name: data.name,
+            name: className,
             section: data.section,
             classTeacherName: teacherName,
             studentCount: 0,
@@ -187,7 +193,7 @@ export default function ClassesPage() {
         ]);
         toast({
           title: "Class Added",
-          description: `${data.name} has been added successfully.`,
+          description: `${className} has been added successfully.`,
         });
       }
       
@@ -354,13 +360,27 @@ export default function ClassesPage() {
                     <div className="grid gap-4 py-4">
                       <FormField
                         control={form.control}
-                        name="name"
+                        name="grade"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Class Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Class 8A" {...field} />
-                            </FormControl>
+                            <FormLabel>Grade</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select grade" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="8">Grade 8</SelectItem>
+                                <SelectItem value="9">Grade 9</SelectItem>
+                                <SelectItem value="10">Grade 10</SelectItem>
+                                <SelectItem value="11">Grade 11</SelectItem>
+                                <SelectItem value="12">Grade 12</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}

@@ -55,6 +55,7 @@ const sampleStaffData = [
   {
     id: 1,
     fullName: "John Doe",
+    username: "john.d",
     email: "john.doe@school.com",
     subject: "Mathematics",
     phoneNumber: "123-456-7890",
@@ -131,6 +132,8 @@ export default function StaffPage() {
     setEditingStaff(staff);
     form.reset({
       email: staff.email,
+      username: staff.username || '', // Handle existing data without username
+      password: '', // Don't populate password on edit
       fullName: staff.fullName,
       phoneNumber: staff.phoneNumber,
       subject: staff.subject,
@@ -157,7 +160,17 @@ export default function StaffPage() {
         // Update existing staff
         setStaffData(staffData.map(staff => 
           staff.id === editingStaff.id 
-            ? { ...staff, ...data } 
+            ? { 
+                ...staff,
+                fullName: data.fullName,
+                username: data.username,
+                // Don't update password if it's empty (on edit)
+                ...(data.password ? { password: data.password } : {}),
+                email: data.email,
+                phoneNumber: data.phoneNumber,
+                subject: data.subject,
+                joiningDate: data.joiningDate, 
+              } 
             : staff
         ));
         toast({
@@ -170,7 +183,13 @@ export default function StaffPage() {
           ...staffData,
           {
             id: staffData.length + 1,
-            ...data,
+            fullName: data.fullName,
+            username: data.username,
+            password: data.password, // Store password for demo purposes
+            email: data.email,
+            phoneNumber: data.phoneNumber,
+            subject: data.subject,
+            joiningDate: data.joiningDate,
             status: "active",
           }
         ]);
