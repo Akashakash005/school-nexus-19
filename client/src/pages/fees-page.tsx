@@ -47,29 +47,28 @@ import { useAuth } from "@/hooks/use-auth";
 
 // Fee payment form schema
 const feePaymentSchema = z.object({
-  studentId: z.string({
+  student_id: z.number({
     required_error: "Please select a student",
+  }),
+  amount_paid: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Amount must be a positive number",
+  }),
+  payment_date: z.date({
+    required_error: "Payment date is required",
   }),
   term: z.string({
     required_error: "Please select a term",
   }),
-  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Amount must be a positive number",
-  }),
-  paymentDate: z.date({
-    required_error: "Payment date is required",
-  }),
-  paymentMethod: z.string({
-    required_error: "Please select a payment method",
-  }),
-  receiptNumber: z.string().min(3, "Receipt number must be at least 3 characters"),
+  status: z.enum(['paid', 'pending', 'overdue']),
+  receipt_url: z.string().optional(),
 });
 
 type FeePaymentValues = z.infer<typeof feePaymentSchema>;
 
 // Fee structure form schema
 const feeStructureSchema = z.object({
-  classId: z.string({
+  school_id: z.number().default(1),
+  class_id: z.number({
     required_error: "Please select a class",
   }),
   term: z.string({
@@ -82,18 +81,49 @@ const feeStructureSchema = z.object({
 
 type FeeStructureValues = z.infer<typeof feeStructureSchema>;
 
-// Sample class data
-const sampleClasses = [
-  { id: "1", name: "Class 8A" },
-  { id: "2", name: "Class 8B" },
-  { id: "3", name: "Class 9A" },
-  { id: "4", name: "Class 9B" },
-  { id: "5", name: "Class 10A" },
-  { id: "6", name: "Class 10B" },
-];
+// Fee types
+const FEE_TYPES = {
+  TUITION: 'tuition',
+  EXAM: 'exam',
+  TRANSPORT: 'transport',
+  LIBRARY: 'library'
+};
 
-// Sample student data
-const sampleStudents = [
+// Get classes from API
+const useClasses = () => {
+  return useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const res = await fetch('/api/schools/1/classes');
+      if (!res.ok) throw new Error('Failed to fetch classes');
+      return res.json();
+    }
+  });
+};
+
+// Get students from API 
+const useStudents = () => {
+  return useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const res = await fetch('/api/schools/1/students');
+      if (!res.ok) throw new Error('Failed to fetch students');
+      return res.json(); 
+    }
+  });
+};
+
+// Get fee structures from API
+const useFeeStructures = () => {
+  return useQuery({
+    queryKey: ['feeStructures'],
+    queryFn: async () => {
+      const res = await fetch('/api/schools/1/fee-structures');
+      if (!res.ok) throw new Error('Failed to fetch fee structures');
+      return res.json();
+    }
+  });
+};
   { id: "1", name: "Alice Johnson", className: "Class 8A", rollNumber: "8A01" },
   { id: "2", name: "Bob Smith", className: "Class 8A", rollNumber: "8A02" },
   { id: "3", name: "Charlie Brown", className: "Class 9A", rollNumber: "9A01" },
