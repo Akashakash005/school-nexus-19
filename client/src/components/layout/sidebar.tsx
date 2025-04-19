@@ -266,10 +266,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
       </ScrollArea>
       
       {/* Logout Button */}
-      <div className="p-4 border-t border-primary-600">
+      <div className="p-4 border-t border-blue-700/50">
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-white/80 hover:text-white hover:bg-primary-600"
+          className="w-full justify-start text-slate-100 hover:text-white hover:bg-blue-700/70"
           onClick={handleLogout}
           disabled={logoutMutation.isPending}
         >
@@ -280,10 +280,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: { mobileOpen?: 
       
       {/* Mobile close button (if provided) */}
       {isMobile && onClose && (
-        <div className="p-4 border-t border-primary-600">
+        <div className="p-4 border-t border-blue-700/50">
           <Button 
             variant="outline" 
-            className="w-full"
+            className="w-full text-white border-blue-500 hover:bg-blue-700/70"
             onClick={onClose}
           >
             Close Menu

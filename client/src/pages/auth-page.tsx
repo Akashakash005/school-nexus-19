@@ -109,22 +109,24 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
       {/* Left Column - Forms */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8">
-        <Card className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-gray-50">
+        <Card className="w-full max-w-md shadow-lg border-blue-100">
           <CardHeader className="space-y-1 flex items-center">
             <div className="flex items-center justify-center mb-2">
-              <School className="h-10 w-10 text-primary" />
+              <School className="h-12 w-12 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl text-center">School Management System</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-blue-500">
+              School Management System
+            </CardTitle>
+            <CardDescription className="text-center text-slate-600">
               Login or create an account to access the system
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 bg-gray-100">
+                <TabsTrigger value="login" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Login</TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Register</TabsTrigger>
               </TabsList>
               
               {/* Login Form */}
@@ -159,7 +161,7 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md" 
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? "Logging in..." : "Login"}
@@ -266,7 +268,7 @@ export default function AuthPage() {
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md" 
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending ? "Creating account..." : "Create account"}
@@ -280,39 +282,41 @@ export default function AuthPage() {
       </div>
       
       {/* Right Column - Hero Section (hidden on mobile) */}
-      <div className="hidden md:flex flex-1 bg-primary-700 text-white p-8 flex-col justify-center items-center">
+      <div className="hidden md:flex flex-1 bg-gradient-to-b from-blue-800 to-blue-900 text-white p-8 flex-col justify-center items-center">
         <div className="max-w-md">
-          <h1 className="text-4xl font-bold mb-4">School Maintenance Software</h1>
-          <p className="text-lg mb-6">
+          <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
+            School Maintenance Software
+          </h1>
+          <p className="text-lg mb-6 text-blue-100">
             A comprehensive solution for school administration, academic management, 
             and communication between staff, students, and parents.
           </p>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-start">
-              <div className="bg-primary-600 p-2 rounded-full mr-4">
-                <School className="h-5 w-5" />
+              <div className="bg-blue-600 shadow-lg p-2 rounded-full mr-4">
+                <School className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-medium">Complete School Management</h3>
-                <p className="text-primary-100">Manage classes, students, staff, fees, and more</p>
+                <h3 className="font-medium text-white">Complete School Management</h3>
+                <p className="text-blue-200">Manage classes, students, staff, fees, and more</p>
               </div>
             </div>
             <div className="flex items-start">
-              <div className="bg-primary-600 p-2 rounded-full mr-4">
-                <School className="h-5 w-5" />
+              <div className="bg-blue-600 shadow-lg p-2 rounded-full mr-4">
+                <School className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-medium">Academic Tracking</h3>
-                <p className="text-primary-100">Track attendance, assignments, and exam results</p>
+                <h3 className="font-medium text-white">Academic Tracking</h3>
+                <p className="text-blue-200">Track attendance, assignments, and exam results</p>
               </div>
             </div>
             <div className="flex items-start">
-              <div className="bg-primary-600 p-2 rounded-full mr-4">
-                <School className="h-5 w-5" />
+              <div className="bg-blue-600 shadow-lg p-2 rounded-full mr-4">
+                <School className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-medium">Communication System</h3>
-                <p className="text-primary-100">Send announcements, messages, and updates</p>
+                <h3 className="font-medium text-white">Communication System</h3>
+                <p className="text-blue-200">Send announcements, messages, and updates</p>
               </div>
             </div>
           </div>
