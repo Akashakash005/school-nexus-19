@@ -309,8 +309,8 @@ export default function ClassesPage() {
         {/* Class Distribution by Grade */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Class Distribution by Grade</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {["8", "9", "10"].map((grade) => {
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] overflow-y-auto">
+            {Array.from(new Set(classData.map(cls => cls.name.match(/\d+/)?.[0] || ''))).sort((a, b) => Number(a) - Number(b)).map((grade) => {
               const gradeClasses = classData.filter(cls => cls.name.includes(`Class ${grade}`));
               const totalStudents = gradeClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
               
