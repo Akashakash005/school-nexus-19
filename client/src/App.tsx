@@ -16,6 +16,7 @@ import SubjectsPage from "@/pages/subjects-page";
 import AttendancePage from "@/pages/attendance-page";
 import FeesPage from "@/pages/fees-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import BillsPage from "@/pages/bills-page"; // Import the BillsPage component
 
 // Main router component
 function Router() {
@@ -23,7 +24,7 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
-      
+
       {/* Protected routes requiring authentication */}
       <ProtectedRoute path="/" component={DashboardPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
@@ -34,7 +35,8 @@ function Router() {
       <ProtectedRoute path="/subjects" component={SubjectsPage} />
       <ProtectedRoute path="/attendance" component={AttendancePage} />
       <ProtectedRoute path="/fees" component={FeesPage} />
-      
+      <ProtectedRoute path="/bills" component={BillsPage} />
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
