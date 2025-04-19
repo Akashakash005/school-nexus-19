@@ -51,6 +51,8 @@ export const teachers = pgTable("teachers", {
   user_id: integer("user_id").notNull().references(() => users.id),
   school_id: integer("school_id").notNull().references(() => schools.id),
   full_name: text("full_name").notNull(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   subject_specialization: text("subject_specialization").notNull(),
   phone_number: text("phone_number").notNull(),
   joining_date: date("joining_date").notNull(),
@@ -80,10 +82,13 @@ export const students = pgTable("students", {
   school_id: integer("school_id").notNull().references(() => schools.id),
   class_id: integer("class_id").references(() => classes.id),
   full_name: text("full_name").notNull(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   dob: date("dob").notNull(),
   gender: text("gender").notNull(),
   admission_date: date("admission_date").notNull(),
   parent_id: integer("parent_id").references(() => parents.id),
+  parent_contact: text("parent_contact").notNull(),
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({
@@ -94,7 +99,7 @@ export const insertStudentSchema = createInsertSchema(students).omit({
 export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
   school_id: integer("school_id").notNull().references(() => schools.id),
-  name: text("name").notNull(),
+  grade: text("grade").notNull(),
   section: text("section").notNull(),
   class_teacher_id: integer("class_teacher_id").references(() => teachers.id),
 });
