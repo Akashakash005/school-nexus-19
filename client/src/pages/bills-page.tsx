@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import DashboardLayout from "@/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,32 +49,34 @@ export default function BillsPage() {
   );
 
   return (
-    <div className="p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Bills Management</CardTitle>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Bill
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Input
-              placeholder="Search bills..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="w-6 h-6 animate-spin" />
+    <DashboardLayout title="Bills Management">
+      <div className="p-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Bills Management</CardTitle>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Bill
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <Input
+                placeholder="Search bills..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-          ) : (
-            <DataTable columns={columns} data={filteredBills} />
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            {isLoading ? (
+              <div className="flex justify-center p-4">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : (
+              <DataTable columns={columns} data={filteredBills} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 }
