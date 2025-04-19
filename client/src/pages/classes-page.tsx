@@ -392,9 +392,22 @@ export default function ClassesPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Section</FormLabel>
-                            <FormControl>
-                              <Input placeholder="A" {...field} />
-                            </FormControl>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select section" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="A">Section A</SelectItem>
+                                <SelectItem value="B">Section B</SelectItem>
+                                <SelectItem value="C">Section C</SelectItem>
+                                <SelectItem value="D">Section D</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
