@@ -385,11 +385,11 @@ export default function ClassesPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="8">Grade 8</SelectItem>
-                                <SelectItem value="9">Grade 9</SelectItem>
-                                <SelectItem value="10">Grade 10</SelectItem>
-                                <SelectItem value="11">Grade 11</SelectItem>
-                                <SelectItem value="12">Grade 12</SelectItem>
+                                {[...Array(12)].map((_, i) => (
+                                  <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                    Grade {i + 1}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -413,10 +413,11 @@ export default function ClassesPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="A">Section A</SelectItem>
-                                <SelectItem value="B">Section B</SelectItem>
-                                <SelectItem value="C">Section C</SelectItem>
-                                <SelectItem value="D">Section D</SelectItem>
+                                {['A', 'B', 'C', 'D', 'E', 'F'].map((section) => (
+                                  <SelectItem key={section} value={section}>
+                                    Section {section}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
