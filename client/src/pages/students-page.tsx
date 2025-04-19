@@ -41,6 +41,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CalendarIcon, Edit, Trash, UserPlus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {ScrollArea} from "@/components/ui/scroll-area" // Assuming this component exists
+
 
 // Student form schema
 const studentFormSchema = z.object({
@@ -159,7 +161,7 @@ export default function StudentsPage() {
   const [editingStudent, setEditingStudent] = useState<typeof sampleStudentData[0] | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<number | null>(null);
-  
+
   // Initialize form
   const form = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
@@ -176,19 +178,19 @@ export default function StudentsPage() {
       admissionDate: new Date(),
     }
   });
-  
+
   // Set form values when editing
   const openEditDialog = (student: typeof sampleStudentData[0]) => {
     setEditingStudent(student);
-    
+
     // Find the class ID based on class name
     const classItem = sampleClasses.find(c => c.name === student.className);
     const classId = classItem ? classItem.id : "";
-    
+
     // Find parent ID based on parent name
     const parentItem = sampleParents.find(p => p.name === student.parentName);
     const parentId = parentItem ? parentItem.id : "";
-    
+
     form.reset({
       email: student.email,
       username: student.username || '', // Handle existing data without username
@@ -203,7 +205,7 @@ export default function StudentsPage() {
     });
     setIsDialogOpen(true);
   };
-  
+
   // Reset form when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
@@ -212,26 +214,26 @@ export default function StudentsPage() {
     }
     setIsDialogOpen(open);
   };
-  
+
   // Handle form submission for creating/editing students
   const onSubmit = (data: StudentFormValues) => {
     setIsSubmitting(true);
-    
+
     setTimeout(() => {
       // Get class name from class ID
       const selectedClass = sampleClasses.find(c => c.id === data.classId);
       const className = selectedClass ? selectedClass.name : "";
-      
+
       // Get parent name from parent ID
       const selectedParent = sampleParents.find(p => p.id === data.parentId);
       const parentName = selectedParent ? selectedParent.name : "";
-      
+
       if (editingStudent) {
         // Update existing student
-        setStudentData(studentData.map(student => 
-          student.id === editingStudent.id 
-            ? { 
-                ...student, 
+        setStudentData(studentData.map(student =>
+          student.id === editingStudent.id
+            ? {
+                ...student,
                 fullName: data.fullName,
                 username: data.username,
                 // Don't update password if it's empty (on edit)
@@ -243,7 +245,7 @@ export default function StudentsPage() {
                 parentName: parentName,
                 parentContact: data.parentContact,
                 admissionDate: data.admissionDate,
-              } 
+              }
             : student
         ));
         toast({
@@ -274,20 +276,20 @@ export default function StudentsPage() {
           description: `${data.fullName} has been added successfully.`,
         });
       }
-      
+
       setIsSubmitting(false);
       setIsDialogOpen(false);
       form.reset();
       setEditingStudent(null);
     }, 1000);
   };
-  
+
   // Handle student deletion
   const handleDelete = (id: number) => {
     setStudentToDelete(id);
     setIsDeleteModalOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (studentToDelete !== null) {
       // Delete student
@@ -300,7 +302,7 @@ export default function StudentsPage() {
       setStudentToDelete(null);
     }
   };
-  
+
   // DataTable columns configuration
   const columns = [
     {
@@ -376,7 +378,7 @@ export default function StudentsPage() {
               <p className="text-3xl font-bold">{studentData.length}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">Classes</CardTitle>
@@ -388,7 +390,7 @@ export default function StudentsPage() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">New Students</CardTitle>
@@ -396,15 +398,15 @@ export default function StudentsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {studentData.filter(student => 
-                  student.admissionDate.getMonth() === new Date().getMonth() && 
+                {studentData.filter(student =>
+                  student.admissionDate.getMonth() === new Date().getMonth() &&
                   student.admissionDate.getFullYear() === new Date().getFullYear()
                 ).length}
               </p>
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Class Distribution */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Class Distribution</h2>
@@ -418,7 +420,7 @@ export default function StudentsPage() {
             ))}
           </div>
         </div>
-        
+
         {/* Students Table with Add Student Button */}
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex justify-between items-center mb-6">
@@ -430,7 +432,7 @@ export default function StudentsPage() {
                   Add Student
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"> {/* Added overflow-y-auto */}
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)}>
                     <DialogHeader>
@@ -438,11 +440,12 @@ export default function StudentsPage() {
                         {editingStudent ? "Edit Student" : "Add New Student"}
                       </DialogTitle>
                       <DialogDescription>
-                        {editingStudent 
-                          ? "Update the student's information" 
+                        {editingStudent
+                          ? "Update the student's information"
                           : "Fill in the details to add a new student"}
                       </DialogDescription>
                     </DialogHeader>
+                    <ScrollArea className="h-[60vh] pr-4">
                     <div className="grid gap-4 py-4">
                       <FormField
                         control={form.control}
@@ -457,7 +460,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="username"
@@ -471,7 +474,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="password"
@@ -485,7 +488,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="email"
@@ -499,15 +502,15 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="gender"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Gender</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -525,7 +528,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="dob"
@@ -564,15 +567,15 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="classId"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Class</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -592,15 +595,15 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="parentId"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Parent</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -620,7 +623,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="parentContact"
@@ -634,7 +637,7 @@ export default function StudentsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="admissionDate"
@@ -674,7 +677,8 @@ export default function StudentsPage() {
                         )}
                       />
                     </div>
-                    <DialogFooter>
+                    </ScrollArea>
+                    <DialogFooter className="mt-4">
                       <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? "Saving..." : editingStudent ? "Update Student" : "Add Student"}
                       </Button>
@@ -684,8 +688,8 @@ export default function StudentsPage() {
               </DialogContent>
             </Dialog>
           </div>
-          
-          <DataTable 
+
+          <DataTable
             data={studentData}
             columns={columns}
             searchPlaceholder="Search students..."
@@ -696,7 +700,7 @@ export default function StudentsPage() {
           />
         </div>
       </div>
-      
+
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent>
