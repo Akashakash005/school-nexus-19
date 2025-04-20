@@ -62,19 +62,6 @@ export const insertTeacherSchema = createInsertSchema(teachers).omit({
   id: true,
 });
 
-// Parents information
-export const parents = pgTable("parents", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull().references(() => users.id),
-  full_name: text("full_name").notNull(),
-  phone_number: text("phone_number").notNull(),
-  address: text("address").notNull(),
-});
-
-export const insertParentSchema = createInsertSchema(parents).omit({
-  id: true,
-});
-
 // Students information
 export const students = pgTable("students", {
   id: serial("id").primaryKey(),
@@ -82,13 +69,14 @@ export const students = pgTable("students", {
   school_id: integer("school_id").notNull().references(() => schools.id),
   class_id: integer("class_id").references(() => classes.id),
   full_name: text("full_name").notNull(),
-  username: text("username").notNull().unique(),
+  student_email: text("student_email").notNull().unique(),
   password: text("password").notNull(),
   dob: date("dob").notNull(),
   gender: text("gender").notNull(),
   admission_date: date("admission_date").notNull(),
-  parent_id: integer("parent_id").references(() => parents.id),
-  parent_contact: text("parent_contact").notNull(),
+  parent_name: text("parent_name"),
+  parent_contact: text("parent_contact"),
+  parent_address: text("parent_address"),
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({
@@ -333,8 +321,6 @@ export type InsertSchoolAdmin = z.infer<typeof insertSchoolAdminSchema>;
 export type Teacher = typeof teachers.$inferSelect;
 export type InsertTeacher = z.infer<typeof insertTeacherSchema>;
 
-export type Parent = typeof parents.$inferSelect;
-export type InsertParent = z.infer<typeof insertParentSchema>;
 
 export type Student = typeof students.$inferSelect;
 export type InsertStudent = z.infer<typeof insertStudentSchema>;

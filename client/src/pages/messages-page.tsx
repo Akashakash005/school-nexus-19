@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +7,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Message } from "@shared/schema";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,7 +40,8 @@ const columns = [
   {
     accessorKey: "created_at",
     header: "Date",
-    cell: ({ row }) => new Date(row.getValue("created_at")).toLocaleDateString(),
+    cell: ({ row }) =>
+      new Date(row.getValue("created_at")).toLocaleDateString(),
   },
 ];
 
@@ -52,7 +64,11 @@ export default function MessagesPage() {
   });
 
   const createMessage = useMutation({
-    mutationFn: async (data: { content: string; receiver_role: string; message_type: string }) => {
+    mutationFn: async (data: {
+      content: string;
+      receiver_role: string;
+      message_type: string;
+    }) => {
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -140,7 +156,9 @@ export default function MessagesPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Receiver</label>
+                <label className="text-sm font-medium mb-1 block">
+                  Receiver
+                </label>
                 <Select value={receiverRole} onValueChange={setReceiverRole}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select receiver" />
@@ -152,7 +170,9 @@ export default function MessagesPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Message Type</label>
+                <label className="text-sm font-medium mb-1 block">
+                  Message Type
+                </label>
                 <Select value={messageType} onValueChange={setMessageType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -165,7 +185,9 @@ export default function MessagesPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Message</label>
+                <label className="text-sm font-medium mb-1 block">
+                  Message
+                </label>
                 <Textarea
                   placeholder="Type your message here..."
                   value={content}

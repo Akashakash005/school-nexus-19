@@ -1,4 +1,4 @@
-import { users, User, InsertUser, schools, School, InsertSchool, schoolAdmins, SchoolAdmin, InsertSchoolAdmin, teachers, Teacher, InsertTeacher, students, Student, InsertStudent, parents, Parent, InsertParent, classes, Class, InsertClass, subjects, Subject, InsertSubject, classSubjects, ClassSubject, InsertClassSubject, studentAttendance, StudentAttendance, InsertStudentAttendance, teacherAttendance, TeacherAttendance, InsertTeacherAttendance, lessonPlans, LessonPlan, InsertLessonPlan, assignments, Assignment, InsertAssignment, assignmentSubmissions, AssignmentSubmission, InsertAssignmentSubmission, exams, Exam, InsertExam, examSubjects, ExamSubject, InsertExamSubject, marks, Mark, InsertMark, feeStructures, FeeStructure, InsertFeeStructure, feePayments, FeePayment, InsertFeePayment, bills, Bill, InsertBill, messages, Message, InsertMessage, classMessages, ClassMessage, InsertClassMessage } from "@shared/schema";
+import { users, User, InsertUser, schools, School, InsertSchool, schoolAdmins, SchoolAdmin, InsertSchoolAdmin, teachers, Teacher, InsertTeacher, students, Student, InsertStudent,  classes, Class, InsertClass, subjects, Subject, InsertSubject, classSubjects, ClassSubject, InsertClassSubject, studentAttendance, StudentAttendance, InsertStudentAttendance, teacherAttendance, TeacherAttendance, InsertTeacherAttendance, lessonPlans, LessonPlan, InsertLessonPlan, assignments, Assignment, InsertAssignment, assignmentSubmissions, AssignmentSubmission, InsertAssignmentSubmission, exams, Exam, InsertExam, examSubjects, ExamSubject, InsertExamSubject, marks, Mark, InsertMark, feeStructures, FeeStructure, InsertFeeStructure, feePayments, FeePayment, InsertFeePayment, bills, Bill, InsertBill, messages, Message, InsertMessage, classMessages, ClassMessage, InsertClassMessage } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
@@ -47,13 +47,7 @@ export interface IStorage {
   updateTeacher(id: number, data: Partial<InsertTeacher>): Promise<Teacher | undefined>;
   deleteTeacher(id: number): Promise<boolean>;
   
-  // Parent operations
-  getParent(id: number): Promise<Parent | undefined>;
-  getParentByUserId(userId: number): Promise<Parent | undefined>;
-  createParent(parent: InsertParent): Promise<Parent>;
-  updateParent(id: number, data: Partial<InsertParent>): Promise<Parent | undefined>;
-  deleteParent(id: number): Promise<boolean>;
-  
+
   // Student operations
   getStudent(id: number): Promise<Student | undefined>;
   getStudentByUserId(userId: number): Promise<Student | undefined>;
@@ -432,36 +426,9 @@ export class MemStorage implements IStorage {
   async deleteTeacher(id: number): Promise<boolean> {
     return this.teachersMap.delete(id);
   }
+ 
   
-  // Parent operations
-  async getParent(id: number): Promise<Parent | undefined> {
-    return this.parentsMap.get(id);
-  }
-  
-  async getParentByUserId(userId: number): Promise<Parent | undefined> {
-    return Array.from(this.parentsMap.values()).find(parent => parent.user_id === userId);
-  }
-  
-  async createParent(insertParent: InsertParent): Promise<Parent> {
-    const id = this.currentIds.parents++;
-    const parent = { ...insertParent, id };
-    this.parentsMap.set(id, parent);
-    return parent;
-  }
-  
-  async updateParent(id: number, data: Partial<InsertParent>): Promise<Parent | undefined> {
-    const parent = await this.getParent(id);
-    if (!parent) return undefined;
-    
-    const updatedParent = { ...parent, ...data };
-    this.parentsMap.set(id, updatedParent);
-    return updatedParent;
-  }
-  
-  async deleteParent(id: number): Promise<boolean> {
-    return this.parentsMap.delete(id);
-  }
-  
+
   // Student operations
   async getStudent(id: number): Promise<Student | undefined> {
     return this.studentsMap.get(id);
@@ -1108,12 +1075,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSchoolAdminByUserId(userId: number): Promise<SchoolAdmin | undefined> {
-    const [admin] = await db.select().from(schoolAdmins).where(eq(schoolAdmins.userId, userId));
+    const [admin] = await db.select().from(schoolAdmins).where(eq(schoolAdmins.user_id, userId));
     return admin;
   }
 
   async getSchoolAdminsBySchoolId(schoolId: number): Promise<SchoolAdmin[]> {
-    return await db.select().from(schoolAdmins).where(eq(schoolAdmins.schoolId, schoolId));
+    return await db.select().from(schoolAdmins).where(eq(schoolAdmins.school_id, schoolId));
   }
 
   async createSchoolAdmin(insertSchoolAdmin: InsertSchoolAdmin): Promise<SchoolAdmin> {
@@ -1143,12 +1110,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeacherByUserId(userId: number): Promise<Teacher | undefined> {
-    const [teacher] = await db.select().from(teachers).where(eq(teachers.userId, userId));
+    const [teacher] = await db.select().from(teachers).where(eq(teachers.user_id, userId));
     return teacher;
   }
 
   async getTeachersBySchoolId(schoolId: number): Promise<Teacher[]> {
-    return await db.select().from(teachers).where(eq(teachers.schoolId, schoolId));
+    return await db.select().from(teachers).where(eq(teachers.school_id, schoolId));
   }
 
   async createTeacher(insertTeacher: InsertTeacher): Promise<Teacher> {
@@ -1171,37 +1138,6 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
 
-  // Parent operations
-  async getParent(id: number): Promise<Parent | undefined> {
-    const [parent] = await db.select().from(parents).where(eq(parents.id, id));
-    return parent;
-  }
-
-  async getParentByUserId(userId: number): Promise<Parent | undefined> {
-    const [parent] = await db.select().from(parents).where(eq(parents.userId, userId));
-    return parent;
-  }
-
-  async createParent(insertParent: InsertParent): Promise<Parent> {
-    const [parent] = await db.insert(parents).values(insertParent).returning();
-    return parent;
-  }
-
-  async updateParent(id: number, data: Partial<InsertParent>): Promise<Parent | undefined> {
-    const [updated] = await db.update(parents)
-      .set(data)
-      .where(eq(parents.id, id))
-      .returning();
-    return updated;
-  }
-
-  async deleteParent(id: number): Promise<boolean> {
-    const [deleted] = await db.delete(parents)
-      .where(eq(parents.id, id))
-      .returning();
-    return !!deleted;
-  }
-
   // Student operations
   async getStudent(id: number): Promise<Student | undefined> {
     const [student] = await db.select().from(students).where(eq(students.id, id));
@@ -1209,16 +1145,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStudentByUserId(userId: number): Promise<Student | undefined> {
-    const [student] = await db.select().from(students).where(eq(students.userId, userId));
+    const [student] = await db.select().from(students).where(eq(students.user_id, userId));
     return student;
   }
 
   async getStudentsBySchoolId(schoolId: number): Promise<Student[]> {
-    return await db.select().from(students).where(eq(students.schoolId, schoolId));
+    return await db.select().from(students).where(eq(students.school_id, schoolId));
   }
 
   async getStudentsByClassId(classId: number): Promise<Student[]> {
-    return await db.select().from(students).where(eq(students.classId, classId));
+    return await db.select().from(students).where(eq(students.class_id, classId));
   }
 
   async createStudent(insertStudent: InsertStudent): Promise<Student> {
@@ -1248,7 +1184,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClassesBySchoolId(schoolId: number): Promise<Class[]> {
-    return await db.select().from(classes).where(eq(classes.schoolId, schoolId));
+    return await db.select().from(classes).where(eq(classes.school_id, schoolId));
   }
 
   async createClass(insertClass: InsertClass): Promise<Class> {
@@ -1278,7 +1214,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSubjectsBySchoolId(schoolId: number): Promise<Subject[]> {
-    return await db.select().from(subjects).where(eq(subjects.schoolId, schoolId));
+    return await db.select().from(subjects).where(eq(subjects.school_id, schoolId));
   }
 
   async createSubject(insertSubject: InsertSubject): Promise<Subject> {
@@ -1308,11 +1244,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClassSubjectsByClassId(classId: number): Promise<ClassSubject[]> {
-    return await db.select().from(classSubjects).where(eq(classSubjects.classId, classId));
+    return await db.select().from(classSubjects).where(eq(classSubjects.class_id, classId));
   }
 
   async getClassSubjectsByTeacherId(teacherId: number): Promise<ClassSubject[]> {
-    return await db.select().from(classSubjects).where(eq(classSubjects.teacherId, teacherId));
+    return await db.select().from(classSubjects).where(eq(classSubjects.teacher_id, teacherId));
   }
 
   async createClassSubject(insertClassSubject: InsertClassSubject): Promise<ClassSubject> {
@@ -1342,13 +1278,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStudentAttendanceByStudentId(studentId: number): Promise<StudentAttendance[]> {
-    return await db.select().from(studentAttendance).where(eq(studentAttendance.studentId, studentId));
+    return await db.select().from(studentAttendance).where(eq(studentAttendance.student_id, studentId));
   }
 
   async getStudentAttendanceByClassId(classId: number, date: Date): Promise<StudentAttendance[]> {
     return await db.select().from(studentAttendance)
       .where(and(
-        eq(studentAttendance.classId, classId),
+        eq(studentAttendance.class_id, classId),
         eq(studentAttendance.date, date)
       ));
   }
@@ -1380,13 +1316,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeacherAttendanceByTeacherId(teacherId: number): Promise<TeacherAttendance[]> {
-    return await db.select().from(teacherAttendance).where(eq(teacherAttendance.teacherId, teacherId));
+    return await db.select().from(teacherAttendance).where(eq(teacherAttendance.teacher_id, teacherId));
   }
 
   async getTeacherAttendanceBySchoolId(schoolId: number, date: Date): Promise<TeacherAttendance[]> {
     return await db.select().from(teacherAttendance)
       .where(and(
-        eq(teacherAttendance.schoolId, schoolId),
+        eq(teacherAttendance.school_id, schoolId),
         eq(teacherAttendance.date, date)
       ));
   }
@@ -1418,11 +1354,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLessonPlansByTeacherId(teacherId: number): Promise<LessonPlan[]> {
-    return await db.select().from(lessonPlans).where(eq(lessonPlans.teacherId, teacherId));
+    return await db.select().from(lessonPlans).where(eq(lessonPlans.teacher_id, teacherId));
   }
 
   async getLessonPlansByClassId(classId: number): Promise<LessonPlan[]> {
-    return await db.select().from(lessonPlans).where(eq(lessonPlans.classId, classId));
+    return await db.select().from(lessonPlans).where(eq(lessonPlans.class_id, classId));
   }
 
   async createLessonPlan(insertLessonPlan: InsertLessonPlan): Promise<LessonPlan> {
@@ -1452,11 +1388,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAssignmentsByTeacherId(teacherId: number): Promise<Assignment[]> {
-    return await db.select().from(assignments).where(eq(assignments.teacherId, teacherId));
+    return await db.select().from(assignments).where(eq(assignments.teacher_id, teacherId));
   }
 
   async getAssignmentsByClassId(classId: number): Promise<Assignment[]> {
-    return await db.select().from(assignments).where(eq(assignments.classId, classId));
+    return await db.select().from(assignments).where(eq(assignments.class_id, classId));
   }
 
   async createAssignment(insertAssignment: InsertAssignment): Promise<Assignment> {
@@ -1486,11 +1422,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAssignmentSubmissionsByAssignmentId(assignmentId: number): Promise<AssignmentSubmission[]> {
-    return await db.select().from(assignmentSubmissions).where(eq(assignmentSubmissions.assignmentId, assignmentId));
+    return await db.select().from(assignmentSubmissions).where(eq(assignmentSubmissions.assignment_id, assignmentId));
   }
 
   async getAssignmentSubmissionsByStudentId(studentId: number): Promise<AssignmentSubmission[]> {
-    return await db.select().from(assignmentSubmissions).where(eq(assignmentSubmissions.studentId, studentId));
+    return await db.select().from(assignmentSubmissions).where(eq(assignmentSubmissions.student_id, studentId));
   }
 
   async createAssignmentSubmission(insertSubmission: InsertAssignmentSubmission): Promise<AssignmentSubmission> {
@@ -1520,11 +1456,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getExamsBySchoolId(schoolId: number): Promise<Exam[]> {
-    return await db.select().from(exams).where(eq(exams.schoolId, schoolId));
+    return await db.select().from(exams).where(eq(exams.school_id, schoolId));
   }
 
   async getExamsByClassId(classId: number): Promise<Exam[]> {
-    return await db.select().from(exams).where(eq(exams.classId, classId));
+    return await db.select().from(exams).where(eq(exams.class_id, classId));
   }
 
   async createExam(insertExam: InsertExam): Promise<Exam> {
@@ -1554,7 +1490,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getExamSubjectsByExamId(examId: number): Promise<ExamSubject[]> {
-    return await db.select().from(examSubjects).where(eq(examSubjects.examId, examId));
+    return await db.select().from(examSubjects).where(eq(examSubjects.exam_id, examId));
   }
 
   async createExamSubject(insertExamSubject: InsertExamSubject): Promise<ExamSubject> {
@@ -1584,11 +1520,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMarksByStudentId(studentId: number): Promise<Mark[]> {
-    return await db.select().from(marks).where(eq(marks.studentId, studentId));
+    return await db.select().from(marks).where(eq(marks.student_id, studentId));
   }
 
   async getMarksByExamSubjectId(examSubjectId: number): Promise<Mark[]> {
-    return await db.select().from(marks).where(eq(marks.examSubjectId, examSubjectId));
+    return await db.select().from(marks).where(eq(marks.exam_subject_id, examSubjectId));
   }
 
   async createMark(insertMark: InsertMark): Promise<Mark> {
@@ -1618,11 +1554,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeeStructuresBySchoolId(schoolId: number): Promise<FeeStructure[]> {
-    return await db.select().from(feeStructures).where(eq(feeStructures.schoolId, schoolId));
+    return await db.select().from(feeStructures).where(eq(feeStructures.school_id, schoolId));
   }
 
   async getFeeStructuresByClassId(classId: number): Promise<FeeStructure[]> {
-    return await db.select().from(feeStructures).where(eq(feeStructures.classId, classId));
+    return await db.select().from(feeStructures).where(eq(feeStructures.class_id, classId));
   }
 
   async createFeeStructure(insertFeeStructure: InsertFeeStructure): Promise<FeeStructure> {
@@ -1652,7 +1588,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeePaymentsByStudentId(studentId: number): Promise<FeePayment[]> {
-    return await db.select().from(feePayments).where(eq(feePayments.studentId, studentId));
+    return await db.select().from(feePayments).where(eq(feePayments.student_id, studentId));
   }
 
   async createFeePayment(insertFeePayment: InsertFeePayment): Promise<FeePayment> {
@@ -1682,7 +1618,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBillsBySchoolId(schoolId: number): Promise<Bill[]> {
-    return await db.select().from(bills).where(eq(bills.schoolId, schoolId));
+    return await db.select().from(bills).where(eq(bills.school_id, schoolId));
   }
 
   async createBill(insertBill: InsertBill): Promise<Bill> {
@@ -1712,18 +1648,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessagesBySenderId(senderId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.senderId, senderId));
+    return await db.select().from(messages).where(eq(messages.sender_id, senderId));
   }
 
   async getMessagesBySchoolId(schoolId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.schoolId, schoolId));
+    return await db.select().from(messages).where(eq(messages.school_id, schoolId));
   }
 
   async getMessagesByReceiverId(receiverId: number, receiverRole: string): Promise<Message[]> {
     return await db.select().from(messages).where(
       and(
-        eq(messages.receiverId, receiverId),
-        eq(messages.receiverRole, receiverRole)
+        eq(messages.receiver_id, receiverId),
+        eq(messages.receiver_role, receiverRole)
       )
     );
   }
@@ -1755,7 +1691,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClassMessagesByClassId(classId: number): Promise<ClassMessage[]> {
-    return await db.select().from(classMessages).where(eq(classMessages.classId, classId));
+    return await db.select().from(classMessages).where(eq(classMessages.class_id, classId));
   }
 
   async createClassMessage(insertClassMessage: InsertClassMessage): Promise<ClassMessage> {

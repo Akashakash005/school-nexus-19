@@ -81,7 +81,7 @@ export default function ClassDetailPage() {
         return [
           {
             id: 1,
-            fullName: "Alice Johnson",
+            fullName: "Ahnson",
             username: "alice_j",
             email: "alice.j@example.com",
             gender: "Female",
@@ -95,7 +95,7 @@ export default function ClassDetailPage() {
           },
           {
             id: 2,
-            fullName: "Bob Smith",
+            fullName: "ith",
             username: "bob_smith",
             email: "bob.s@example.com",
             gender: "Male",

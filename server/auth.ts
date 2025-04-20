@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User, InsertUser } from "@shared/schema";
+import { User, InsertUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
 declare global {
@@ -32,7 +32,7 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 // User registration schema with validation
-const registrationSchema = z.object({
+const  registrationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -49,6 +49,10 @@ const registrationSchema = z.object({
     path: ["schoolName"],
   }
 );
+
+
+
+
 
 // Set up authentication middleware and routes
 export function setupAuth(app: Express) {
@@ -107,14 +111,37 @@ export function setupAuth(app: Express) {
     }
   });
 
+app.post("/api/register/user_student" , async (req, res, next) => {
+  try {
+    
+    console.log("calling POST /api/register...")
+    // Validate registration data
+    const userData=  insertUserSchema.parse(req.body);
+    const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+  }catch (err) {
+    if (err instanceof z.ZodError) {
+      // Return validation errors
+      console.log("api/register/user_student error log ::",err.errors)
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: err.errors 
+      });
+    }
+    next(err);
+  }
+}) 
   // User registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
+
+      console.log("calling POST /api/register...")
       // Validate registration data
       const validatedData = registrationSchema.parse(req.body);
-      
+      console.log("validation user ::",validatedData)
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
+
       if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
       }
@@ -128,6 +155,8 @@ export function setupAuth(app: Express) {
         ...userData,
         password: hashedPassword,
       });
+
+      console.log("new user ::",newUser)
 
       // Handle school admin registration with school creation
       if (userData.role === "school_admin" && schoolName) {
@@ -158,6 +187,7 @@ export function setupAuth(app: Express) {
     } catch (err) {
       if (err instanceof z.ZodError) {
         // Return validation errors
+        console.log("api/register error log ::",err.errors)
         return res.status(400).json({ 
           message: "Validation failed", 
           errors: err.errors 

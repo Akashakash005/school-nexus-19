@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
-import { insertSchoolSchema, insertSchoolAdminSchema, insertTeacherSchema, insertStudentSchema, insertParentSchema, insertClassSchema, insertSubjectSchema, insertClassSubjectSchema, insertStudentAttendanceSchema, insertMessageSchema, insertClassMessageSchema, insertExamSchema, insertFeeStructureSchema, insertFeePaymentSchema, insertBillSchema } from "@shared/schema";
+import { insertSchoolSchema, insertSchoolAdminSchema, insertTeacherSchema, insertStudentSchema,  insertClassSchema, insertSubjectSchema, insertClassSubjectSchema, insertStudentAttendanceSchema, insertMessageSchema, insertClassMessageSchema, insertExamSchema, insertFeeStructureSchema, insertFeePaymentSchema, insertBillSchema } from "@shared/schema";
+import { ConsoleLogWriter } from "drizzle-orm";
+import { Console } from "console";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -235,10 +237,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get students by class
   app.get("/api/classes/:classId/students", requireRole(["super_admin", "school_admin", "teacher"]), async (req, res) => {
     try {
+      
       const classId = parseInt(req.params.classId);
       const students = await storage.getStudentsByClassId(classId);
+      console.log("students data::",students)
       res.json(students);
     } catch (error) {
+      console.log('Error on get students by class', error);
       res.status(500).json({ message: "Failed to fetch students for class", error });
     }
   });
@@ -246,13 +251,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a student
   app.post("/api/students", requireRole(["super_admin", "school_admin"]), async (req, res) => {
     try {
+   
       const studentData = insertStudentSchema.parse(req.body);
+      console.log(" student Data:" , studentData)
       const newStudent = await storage.createStudent(studentData);
       res.status(201).json(newStudent);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("student create error:",error.errors)
         return res.status(400).json({ message: "Validation failed", errors: error.errors });
       }
+      console.log("class create error:",error)
       res.status(500).json({ message: "Failed to create student", error });
     }
   });
@@ -295,60 +304,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ============ Parent Routes ============
   
-  // Create a parent
-  app.post("/api/parents", requireRole(["super_admin", "school_admin"]), async (req, res) => {
-    try {
-      const parentData = insertParentSchema.parse(req.body);
-      const newParent = await storage.createParent(parentData);
-      res.status(201).json(newParent);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation failed", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create parent", error });
-    }
-  });
-  
-  // Get a parent
-  app.get("/api/parents/:id", requireRole(["super_admin", "school_admin", "teacher"]), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const parent = await storage.getParent(id);
-      
-      if (!parent) {
-        return res.status(404).json({ message: "Parent not found" });
-      }
-      
-      res.json(parent);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch parent", error });
-    }
-  });
-  
-  // Update a parent
-  app.put("/api/parents/:id", requireRole(["super_admin", "school_admin"]), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const parentData = insertParentSchema.partial().parse(req.body);
-      
-      const updatedParent = await storage.updateParent(id, parentData);
-      if (!updatedParent) {
-        return res.status(404).json({ message: "Parent not found" });
-      }
-      
-      res.json(updatedParent);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation failed", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update parent", error });
-    }
-  });
-  
+
+
+
   // ============ Class Routes ============
   
   // Get classes by school
-  app.get("/api/schools/:schoolId/classes", requireRole(["super_admin", "school_admin", "teacher"]), async (req, res) => {
+  app.get("/api/schools/:schoolId/classes",  async (req, res) => {  //removed require role requireRole(["super_admin", "school_admin", "teacher"]) temporarily,
     try {
       const schoolId = parseInt(req.params.schoolId);
       const classes = await storage.getClassesBySchoolId(schoolId);
@@ -366,8 +328,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(newClass);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("class create error:",error.errors)
         return res.status(400).json({ message: "Validation failed", errors: error.errors });
       }
+      console.log("student create error:",error)
       res.status(500).json({ message: "Failed to create class", error });
     }
   });
@@ -709,6 +673,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Validation failed", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to send message", error });
+    }
+  });
+  
+
+
+  //get message by school Id
+  app.get("/api/schools/:schoolID/messages", requireRole(["super_admin", "school_admin", "teacher", "student", "parent"]), async (req, res) => {
+    try {
+      const schoolID = parseInt(req.params.schoolID, 10);
+  
+      if (isNaN(schoolID)) {
+        return res.status(400).json({ message: "Invalid school ID" });
+      }
+  
+      const messages = await storage.getMessagesBySchoolId(schoolID);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages by school ID:", error);
+      res.status(500).json({ message: "Failed to fetch messages", error });
     }
   });
   
