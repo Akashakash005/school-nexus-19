@@ -1,9 +1,9 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
@@ -15,16 +15,14 @@ import ClassDetailPage from "@/pages/class-detail-page";
 import SubjectsPage from "@/pages/subjects-page";
 import AttendancePage from "@/pages/attendance-page";
 import FeesPage from "@/pages/fees-page";
-import { ProtectedRoute } from "./lib/protected-route";
+import { ProtectedRoute } from "@/lib/protected-route";
 import BillsPage from "@/pages/bills-page";
 import MessagesPage from "@/pages/messages-page";
 import StudentClassesPage from "@/pages/student/student-classes-page";
 import StudentFeesPage from "@/pages/student/student-fees-page";
 import StudentMessagesPage from "@/pages/student/student-messages-page";
-import TeacherClassesPage from "@/pages/teacher/teacher-classes-page";
-import TeacherMessagesPage from "@/pages/teacher/teacher-messages-page";
-import StudentDashboardPage from "@/pages/student/student-dashboard-page"; // Added import
-import TeacherDashboardPage from "@/pages/teacher/teacher-dashboard-page"; // Added import
+import TeacherClassesPage from "@/pages/teacher/teacher-classes-page"; // Added import
+import TeacherMessagesPage from "@/pages/teacher/teacher-messages-page"; // Added import
 
 // Main router component
 function Router() {
@@ -34,18 +32,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
 
       {/* Protected routes requiring authentication */}
-      <ProtectedRoute
-        path="/"
-        component={() => {
-          const { user } = useAuth();
-          return user?.role === "student" ? (
-            <StudentDashboardPage />
-          ) : (
-            <TeacherDashboardPage />
-          );
-        }}
-      />
-
+      <ProtectedRoute path="/" component={DashboardPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
 
       {/* Admin routes */}
