@@ -52,26 +52,34 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 // Staff form schema
-const staffFormSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
+const staffFormSchema = z
+  .object({
+    email: z.string().email("Please enter a valid email"),
 
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  phone_number: z.string().min(10, "Please enter a valid phone number"),
-  subject_specialization: z
-    .string()
-    .min(1, "Subject specialization is required"),
-  gender: z.string().min(1, "Subject Gender is required"),
-  joiningDate: z.date({
-    required_error: "Joining date is required",
-  }),
-});
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Confirm password must be at least 6 characters"),
+    full_name: z.string().min(2, "Full name must be at least 2 characters"),
+    phone_number: z.string().min(10, "Please enter a valid phone number"),
+    subject_specialization: z
+      .string()
+      .min(1, "Subject specialization is required"),
+    gender: z.string().min(1, "Subject Gender is required"),
+    joiningDate: z.date({
+      required_error: "Joining date is required",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 interface StaffData {
   id: number;
 
-  fullName: string;
+  full_name: string;
   email: string;
   gender: "male" | "female" | "other";
   joiningDate: Date;
@@ -118,9 +126,10 @@ export default function StaffPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: data.fullName,
+          name: data.full_name,
           email: data.email,
           password: data.password,
+          confirmPassword: data.confirmPassword,
           role: "staff",
         }),
       });
@@ -161,10 +170,11 @@ export default function StaffPage() {
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
-      fullName: "",
+      full_name: "",
 
       email: "",
       password: "",
+      confirmPassword: "",
       subject_specialization: "",
       gender: "male",
       joiningDate: new Date(),
@@ -189,7 +199,7 @@ export default function StaffPage() {
 
       password: "", // Avoid filling password for edit; may use separate modal
       gender: staff.gender ?? "male", // Or default
-      fullName: staff.fullName,
+      full_name: staff.full_name,
       phone_number: staff.phone_number,
       subject_specialization: staff.subject_specialization,
       joiningDate: staff.joiningDate,
@@ -253,10 +263,10 @@ export default function StaffPage() {
   };
 
   // DataTable columns configuration
-  const columns = [
+  const columns: DataTableColumn<StaffData>[] = [
     {
       header: "Name",
-      accessorKey: "fullName",
+      accessorKey: "full_name",
     },
     {
       header: "Email",
@@ -264,16 +274,19 @@ export default function StaffPage() {
     },
     {
       header: "Subject",
-      accessorKey: "subject",
+      accessorKey: "subject_specialization",
     },
     {
       header: "Phone",
-      accessorKey: "phoneNumber",
+      accessorKey: "phone_number",
     },
     {
       header: "Joining Date",
       accessorKey: "joiningDate",
-      cell: (staff: any) => format(new Date(staff.joiningDate), "PPP"),
+      cell: (staff: any) => {
+        const date = new Date(staff.joiningDate);
+        return isNaN(date.getTime()) ? "-" : format(date, "PPP");
+      },
     },
     {
       header: "Status",
@@ -349,8 +362,10 @@ export default function StaffPage() {
                 {
                   staffData.filter(
                     (staff) =>
-                      staff.joiningDate.getMonth() === new Date().getMonth() &&
-                      staff.joiningDate.getFullYear() ===
+                      staff.joiningDate &&
+                      new Date(staff.joiningDate).getMonth() ===
+                        new Date().getMonth() &&
+                      new Date(staff.joiningDate).getFullYear() ===
                         new Date().getFullYear()
                   ).length
                 }
@@ -388,30 +403,12 @@ export default function StaffPage() {
                       <div className="grid gap-4 py-4">
                         <FormField
                           control={form.control}
-                          name="fullName"
+                          name="full_name"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Full Name</FormLabel>
                               <FormControl>
                                 <Input placeholder="John Doe" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Password</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="password"
-                                  placeholder="••••••••"
-                                  {...field}
-                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -435,6 +432,40 @@ export default function StaffPage() {
                           )}
                         />
 
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Password</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder="••••••••"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Confirm Password</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder="••••••••"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         <FormField
                           control={form.control}
                           name="phone_number"
@@ -557,6 +588,15 @@ export default function StaffPage() {
               // Implement search logic in a real app
             }}
           /> */}
+          <DataTable
+            data={staffData}
+            columns={columns}
+            searchPlaceholder="Search staff..."
+            onSearch={(query) => {
+              console.log("Search query:", query);
+              // Implement search logic in a real app
+            }}
+          />
         </div>
       </div>
 

@@ -151,7 +151,7 @@ export default function Sidebar({
           )}
 
           {/* School Admin & Teacher Navigation */}
-          {(user?.role === "school_admin" || user?.role === "teacher") && (
+          {(user?.role === "school_admin" || user?.role === "staff") && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 School Management
@@ -259,7 +259,7 @@ export default function Sidebar({
           )}
 
           {/* Student Navigation */}
-          {user?.role === "teacher" && (
+          {user?.role === "staff" && (
             <>
               <div className="px-4 mt-6 mb-2 text-xs font-semibold text-blue-300 uppercase tracking-wider">
                 Teaching
@@ -276,6 +276,7 @@ export default function Sidebar({
                   <span>My Classes</span>
                 </a>
               </Link>
+
               <Link href="/teacher/messages">
                 <a
                   className={

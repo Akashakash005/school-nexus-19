@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  
   role: text("role").notNull(), // 'super_admin', 'school_admin', 'teacher', 'student', 'parent'
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
@@ -51,7 +52,6 @@ export const teachers = pgTable("teachers", {
   user_id: integer("user_id").notNull().references(() => users.id),
   school_id: integer("school_id").notNull().references(() => schools.id),
   full_name: text("full_name").notNull(),
-  username: text("username").notNull().unique(),
   password: text("password").notNull(),
   gender:text("gender").notNull(),
   subject_specialization: text("subject_specialization").notNull(),

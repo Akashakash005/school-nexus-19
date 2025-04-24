@@ -77,6 +77,10 @@ function Router() {
       {/* Teacher routes */}
       <ProtectedRoute path="/teacher/classes" component={TeacherClassesPage} />
       <ProtectedRoute
+        path="/teacher/dashboard"
+        component={TeacherClassesPage}
+      />
+      <ProtectedRoute
         path="/teacher/messages"
         component={TeacherMessagesPage}
       />

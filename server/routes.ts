@@ -164,9 +164,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/schools/:schoolId/teachers", requireRole(["super_admin", "school_admin"]), async (req, res) => {
     try {
       const schoolId = parseInt(req.params.schoolId);
+      console.log("test staff:",req.params)
       const teachers = await storage.getTeachersBySchoolId(schoolId);
       res.json(teachers);
     } catch (error) {
+      console.log("error fetch staffs : " , error)
       res.status(500).json({ message: "Failed to fetch teachers", error });
     }
   });
@@ -175,12 +177,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/teachers", requireRole(["super_admin", "school_admin"]), async (req, res) => {
     try {
       const teacherData = insertTeacherSchema.parse(req.body);
+      console.log(" teacherdata:;",teacherData)
       const newTeacher = await storage.createTeacher(teacherData);
+      console.log("newteacher ::", newTeacher)
       res.status(201).json(newTeacher);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("error on api/teacher :",error.errors)
         return res.status(400).json({ message: "Validation failed", errors: error.errors });
       }
+      console.log("error on api/teacher :",error)
       res.status(500).json({ message: "Failed to create teacher", error });
     }
   });

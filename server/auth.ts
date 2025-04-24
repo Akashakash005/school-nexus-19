@@ -5,12 +5,13 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User, InsertUser, insertUserSchema } from "@shared/schema";
+import {InsertUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import type { User as AppUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends AppUser {} 
   }
 }
 
@@ -51,7 +52,17 @@ const  registrationSchema = z.object({
 );
 
 
-
+// User registration schema with validation
+const  UserregistrationSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"),
+  role: z.enum(["super_admin", "school_admin","student",'staff']),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+})
 
 
 // Set up authentication middleware and routes
@@ -133,26 +144,47 @@ app.post("/api/register/user_student" , async (req, res, next) => {
 }) 
 
 
-app.post("/api/register/user_staff" , async (req, res, next) => {
+app.post("/api/register/user_staff", async (req, res, next) => {
   try {
-    
-    console.log("calling POST /api/register/user_staff...")
-    // Validate registration data
-    const userData=  insertUserSchema.parse(req.body);
-    const newUser = await storage.createUser(userData);
-      res.status(201).json(newUser);
-  }catch (err) {
+    console.log("calling POST /api/register/user_staff...");
+
+    // 1. Validate input
+    const validatedData = UserregistrationSchema.parse(req.body);
+    console.log("validation user staff/student ::", validatedData);
+
+    const { confirmPassword, ...userData } = validatedData;
+
+    // 2. Check if user already exists
+    const existingUser = await storage.getUserByEmail(userData.email);
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // 3. Hash password
+    const hashedPassword = await hashPassword(userData.password);
+
+    // 4. Create user with hashed password
+    const newUser = await storage.createUser({
+      ...userData,
+      password: hashedPassword,
+    });
+
+    console.log("new user ::", newUser);
+    res.status(201).json(newUser);
+
+  } catch (err) {
     if (err instanceof z.ZodError) {
-      // Return validation errors
-      console.log("api/register/user_staff error log ::",err.errors)
-      return res.status(400).json({ 
-        message: "Validation failed", 
-        errors: err.errors 
+      console.log("api/register/user_staff error log ::", err.errors);
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: err.errors,
       });
     }
+
+
     next(err);
   }
-}) 
+});
 
   // User registration endpoint
   app.post("/api/register", async (req, res, next) => {

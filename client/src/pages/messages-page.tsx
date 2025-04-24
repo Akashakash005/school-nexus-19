@@ -40,8 +40,11 @@ const columns = [
   {
     accessorKey: "created_at",
     header: "Date",
-    cell: ({ row }) =>
-      new Date(row.getValue("created_at")).toLocaleDateString(),
+    cell: ({ row }) => {
+      console.log(row); // Check the structure
+      const createdAt = row?.getValue("created_at");
+      return createdAt ? new Date(createdAt).toLocaleDateString() : "-";
+    },
   },
 ];
 
