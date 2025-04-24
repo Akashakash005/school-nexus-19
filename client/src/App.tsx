@@ -25,8 +25,8 @@ import TeacherClassesPage from "@/pages/teacher/teacher-classes-page";
 import TeacherMessagesPage from "@/pages/teacher/teacher-messages-page";
 import StudentDashboardPage from "@/pages/student/student-dashboard-page"; // Added import
 import TeacherDashboardPage from "@/pages/teacher/teacher-dashboard-page"; // Added import
+import StudentAttendancePage from "./pages/student/student-attendance-page";
 
-// Main router component
 function Router() {
   return (
     <Switch>
@@ -69,6 +69,10 @@ function Router() {
         path="/student/messages"
         component={StudentMessagesPage}
       />
+      <ProtectedRoute
+        path="/student/attendance"
+        component={StudentAttendancePage}
+      />
 
       {/* Teacher routes */}
       <ProtectedRoute path="/teacher/classes" component={TeacherClassesPage} />
@@ -84,7 +88,7 @@ function Router() {
 }
 
 // Main app component
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -96,5 +100,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;

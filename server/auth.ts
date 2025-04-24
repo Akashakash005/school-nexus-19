@@ -131,6 +131,29 @@ app.post("/api/register/user_student" , async (req, res, next) => {
     next(err);
   }
 }) 
+
+
+app.post("/api/register/user_staff" , async (req, res, next) => {
+  try {
+    
+    console.log("calling POST /api/register/user_staff...")
+    // Validate registration data
+    const userData=  insertUserSchema.parse(req.body);
+    const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+  }catch (err) {
+    if (err instanceof z.ZodError) {
+      // Return validation errors
+      console.log("api/register/user_staff error log ::",err.errors)
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: err.errors 
+      });
+    }
+    next(err);
+  }
+}) 
+
   // User registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {

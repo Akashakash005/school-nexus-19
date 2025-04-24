@@ -20,68 +20,52 @@ import BillsPage from "@/pages/bills-page";
 import MessagesPage from "@/pages/messages-page";
 import StudentClassesPage from "@/pages/student/student-classes-page";
 import StudentFeesPage from "@/pages/student/student-fees-page";
-import StudentMessagesPage from "@/pages/student/student-messages-page";
 import TeacherClassesPage from "@/pages/teacher/teacher-classes-page"; // Added import
 import TeacherMessagesPage from "@/pages/teacher/teacher-messages-page"; // Added import
+import { useAuth } from "@/hooks/use-auth";
+import DashboardLayout from "@/layout/dashboard-layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Main router component
-function Router() {
+export default function StudentMessagesPage() {
+  const { user } = useAuth();
+
+  // Sample data - in a real app this would come from an API
+  const messages = [
+    {
+      id: 1,
+      sender: "Mr. John Smith",
+      content: "Your math homework is due tomorrow",
+      date: "2024-02-20",
+    },
+    {
+      id: 2,
+      sender: "Mrs. Jane Doe",
+      content: "Great work on your science project!",
+      date: "2024-02-19",
+    },
+  ];
+
   return (
-    <Switch>
-      {/* Public routes */}
-      <Route path="/auth" component={AuthPage} />
-
-      {/* Protected routes requiring authentication */}
-      <ProtectedRoute path="/" component={DashboardPage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-
-      {/* Admin routes */}
-      <ProtectedRoute path="/staff" component={StaffPage} />
-      <ProtectedRoute path="/students" component={StudentsPage} />
-      <ProtectedRoute path="/classes" component={ClassesPage} />
-      <ProtectedRoute
-        path="/classes/:gradeId/:sectionId"
-        component={ClassDetailPage}
-      />
-      <ProtectedRoute path="/subjects" component={SubjectsPage} />
-      <ProtectedRoute path="/attendance" component={AttendancePage} />
-      <ProtectedRoute path="/fees" component={FeesPage} />
-      <ProtectedRoute path="/bills" component={BillsPage} />
-      <ProtectedRoute path="/messages" component={MessagesPage} />
-
-      {/* Student routes */}
-      <ProtectedRoute path="/student/classes" component={StudentClassesPage} />
-      <ProtectedRoute path="/student/fees" component={StudentFeesPage} />
-      <ProtectedRoute
-        path="/student/messages"
-        component={StudentMessagesPage}
-      />
-
-      {/* Teacher routes */}
-      <ProtectedRoute path="/teacher/classes" component={TeacherClassesPage} />
-      <ProtectedRoute
-        path="/teacher/messages"
-        component={TeacherMessagesPage}
-      />
-
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <DashboardLayout title="My Messages">
+      <div className="container py-6">
+        <div className="grid gap-6">
+          {messages.map((message) => (
+            <Card key={message.id}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-bold">
+                  From: {message.sender}
+                </CardTitle>
+                <span className="text-sm text-muted-foreground">
+                  {message.date}
+                </span>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">{message.content}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
-
-// Main app component
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
-
-export default App;

@@ -332,8 +332,7 @@ export default function Sidebar({
                   <span>My Messages</span>
                 </a>
               </Link>
-
-              <Link href="/attendance">
+              <Link href="/student/attendance">
                 <a
                   className={
                     location === "/attendance"
@@ -343,39 +342,6 @@ export default function Sidebar({
                 >
                   <Calendar className="mr-3 h-4 w-4" />
                   <span>Attendance</span>
-                </a>
-              </Link>
-
-              <Link href="/classes">
-                <a
-                  className={
-                    location === "/classes" ? activeNavClass : inactiveNavClass
-                  }
-                >
-                  <BookOpen className="mr-3 h-4 w-4" />
-                  <span>Classes & Subjects</span>
-                </a>
-              </Link>
-
-              <Link href="/fees">
-                <a
-                  className={
-                    location === "/fees" ? activeNavClass : inactiveNavClass
-                  }
-                >
-                  <DollarSign className="mr-3 h-4 w-4" />
-                  <span>Fees</span>
-                </a>
-              </Link>
-
-              <Link href="/messages">
-                <a
-                  className={
-                    location === "/messages" ? activeNavClass : inactiveNavClass
-                  }
-                >
-                  <MessageSquare className="mr-3 h-4 w-4" />
-                  <span>Messages</span>
                 </a>
               </Link>
             </>

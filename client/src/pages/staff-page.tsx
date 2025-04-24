@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/layout/dashboard-layout";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+
 import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -30,75 +32,54 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CalendarIcon, Edit, Trash, UserPlus } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery } from "@tanstack/react-query";
 // Staff form schema
 const staffFormSchema = z.object({
   email: z.string().email("Please enter a valid email"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
+
   password: z.string().min(6, "Password must be at least 6 characters"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  phoneNumber: z.string().min(10, "Please enter a valid phone number"),
-  subject: z.string().min(1, "Subject specialization is required"),
+  phone_number: z.string().min(10, "Please enter a valid phone number"),
+  subject_specialization: z
+    .string()
+    .min(1, "Subject specialization is required"),
+  gender: z.string().min(1, "Subject Gender is required"),
   joiningDate: z.date({
     required_error: "Joining date is required",
   }),
 });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
+interface StaffData {
+  id: number;
 
-// Sample staff data
-const sampleStaffData = [
-  {
-    id: 1,
-    fullName: "John Doe",
-    username: "john.d",
-    email: "john.doe@school.com",
-    subject: "Mathematics",
-    phoneNumber: "123-456-7890",
-    joiningDate: new Date("2023-03-15"),
-    status: "active",
-  },
-  {
-    id: 2,
-    fullName: "Jane Smith",
-    email: "jane.smith@school.com",
-    subject: "English",
-    phoneNumber: "123-456-7891",
-    joiningDate: new Date("2022-06-22"),
-    status: "active",
-  },
-  {
-    id: 3,
-    fullName: "Bob Johnson",
-    email: "bob.johnson@school.com",
-    subject: "Science",
-    phoneNumber: "123-456-7892",
-    joiningDate: new Date("2024-01-10"),
-    status: "active",
-  },
-  {
-    id: 4,
-    fullName: "Sarah Williams",
-    email: "sarah.williams@school.com",
-    subject: "History",
-    phoneNumber: "123-456-7893",
-    joiningDate: new Date("2023-09-05"),
-    status: "active",
-  },
-  {
-    id: 5,
-    fullName: "Michael Brown",
-    email: "michael.brown@school.com",
-    subject: "Physical Education",
-    phoneNumber: "123-456-7894",
-    joiningDate: new Date("2022-08-14"),
-    status: "active",
-  },
-];
+  fullName: string;
+  email: string;
+  gender: "male" | "female" | "other";
+  joiningDate: Date;
+  status: string;
+  address: string;
+  phone_number: string;
+  subject_specialization: string;
+}
 
 /**
  * Staff management page component
@@ -108,40 +89,89 @@ export default function StaffPage() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [staffData, setStaffData] = useState(sampleStaffData);
-  const [editingStaff, setEditingStaff] = useState<typeof sampleStaffData[0] | null>(null);
+  const [staffData, setStaffData] = useState<StaffData[]>([]);
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+
+  const fetchStaff = async () => {
+    try {
+      const res = await fetch("/api/schools/1/teachers");
+      if (!res.ok) throw new Error("Failed to fetch staff");
+      const data = await res.json();
+      setStaffData(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load staff list",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createStaff = async (data: StaffFormValues) => {
+    try {
+      // 1. Create user
+      console.log("calling userres::");
+      const userRes = await fetch("/api/register/user_staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.fullName,
+          email: data.email,
+          password: data.password,
+          role: "staff",
+        }),
+      });
+      console.log("check userres:", userRes);
+      if (!userRes.ok) throw new Error("Failed to create user");
+      const newUser = await userRes.json();
+      const userId = newUser.id;
+
+      // 2. Create staff profile
+      const staffRes = await fetch("/api/teachers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          user_id: userId,
+          school_id: 1, // make dynamic if needed
+          joining_date: data.joiningDate ?? "2024-06-01", // fallback default
+        }),
+      });
+
+      console.log("teacher res ::", staffRes);
+
+      if (!staffRes.ok) throw new Error("Failed to create staff");
+
+      // 3. Refresh staff list (if available)
+
+      await fetchStaff();
+    } catch (error) {
+      console.error("Error creating staff:", error);
+      throw error;
+    }
+  };
+
+  const [editingStaff, setEditingStaff] = useState<StaffData | null>(null); // Added type
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<number | null>(null);
-  
-  // Initialize form
+
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
-      email: "",
-      username: "",
-      password: "",
       fullName: "",
-      phoneNumber: "",
-      subject: "",
+
+      email: "",
+      password: "",
+      subject_specialization: "",
+      gender: "male",
       joiningDate: new Date(),
-    }
+      phone_number: "",
+    },
   });
-  
-  // Set form values when editing
-  const openEditDialog = (staff: typeof sampleStaffData[0]) => {
-    setEditingStaff(staff);
-    form.reset({
-      email: staff.email,
-      username: staff.username || '', // Handle existing data without username
-      password: '', // Don't populate password on edit
-      fullName: staff.fullName,
-      phoneNumber: staff.phoneNumber,
-      subject: staff.subject,
-      joiningDate: staff.joiningDate,
-    });
-    setIsDialogOpen(true);
-  };
-  
+
   // Reset form when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
@@ -150,81 +180,78 @@ export default function StaffPage() {
     }
     setIsDialogOpen(open);
   };
-  
-  // Handle form submission for creating/editing staff
-  const onSubmit = (data: StaffFormValues) => {
-    setIsSubmitting(true);
-    
-    setTimeout(() => {
-      if (editingStaff) {
-        // Update existing staff
-        setStaffData(staffData.map(staff => 
-          staff.id === editingStaff.id 
-            ? { 
-                ...staff,
-                fullName: data.fullName,
-                username: data.username,
-                // Don't update password if it's empty (on edit)
-                ...(data.password ? { password: data.password } : {}),
-                email: data.email,
-                phoneNumber: data.phoneNumber,
-                subject: data.subject,
-                joiningDate: data.joiningDate, 
-              } 
-            : staff
-        ));
-        toast({
-          title: "Staff Updated",
-          description: `${data.fullName} has been updated successfully.`,
-        });
-      } else {
-        // Create new staff
-        setStaffData([
-          ...staffData,
-          {
-            id: staffData.length + 1,
-            fullName: data.fullName,
-            username: data.username,
-            password: data.password, // Store password for demo purposes
-            email: data.email,
-            phoneNumber: data.phoneNumber,
-            subject: data.subject,
-            joiningDate: data.joiningDate,
-            status: "active",
-          }
-        ]);
-        toast({
-          title: "Staff Added",
-          description: `${data.fullName} has been added to the staff.`,
-        });
-      }
-      
-      setIsSubmitting(false);
-      setIsDialogOpen(false);
-      form.reset();
-      setEditingStaff(null);
-    }, 1000);
+
+  // Set form values when editing
+  const openEditDialog = (staff: StaffData) => {
+    setEditingStaff(staff);
+    form.reset({
+      email: staff.email,
+
+      password: "", // Avoid filling password for edit; may use separate modal
+      gender: staff.gender ?? "male", // Or default
+      fullName: staff.fullName,
+      phone_number: staff.phone_number,
+      subject_specialization: staff.subject_specialization,
+      joiningDate: staff.joiningDate,
+    });
+    setIsDialogOpen(true);
   };
-  
+
+  // Handle form submission for creating/editing staff
+  const onSubmit = async (data: StaffFormValues) => {
+    setIsSubmitting(true);
+    try {
+      if (editingStaff) {
+        const res = await fetch(`/api/teachers/${editingStaff.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error("Failed to update staff");
+      } else {
+        await createStaff(data);
+      }
+
+      toast({
+        title: "Success",
+        description: editingStaff
+          ? "staff updated successfully"
+          : "New staff added successfully",
+      });
+      setIsDialogOpen(false);
+      await fetchStaff();
+    } catch (error) {
+      console.log("error ::", error);
+      toast({
+        title: "Error",
+        description: "Failed to save staff",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handle staff deletion
   const handleDelete = (id: number) => {
     setStaffToDelete(id);
     setIsDeleteModalOpen(true);
   };
-  
+
   const confirmDelete = () => {
-    if (staffToDelete !== null) {
-      // Delete staff member
-      setStaffData(staffData.filter(staff => staff.id !== staffToDelete));
+    if (staffToDelete) {
+      setStaffData((prev) =>
+        prev.filter((staff) => staff.id !== staffToDelete)
+      );
       toast({
-        title: "Staff Removed",
-        description: "The staff member has been removed successfully.",
+        title: "Success",
+        description: "Student removed successfully",
       });
       setIsDeleteModalOpen(false);
       setStaffToDelete(null);
     }
   };
-  
+
   // DataTable columns configuration
   const columns = [
     {
@@ -262,10 +289,18 @@ export default function StaffPage() {
       accessorKey: "id",
       cell: (staff: any) => (
         <div className="flex space-x-2">
-          <Button variant="ghost" size="icon" onClick={() => openEditDialog(staff)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openEditDialog(staff)}
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(staff.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(staff.id)}
+          >
             <Trash className="h-4 w-4" />
           </Button>
         </div>
@@ -287,7 +322,7 @@ export default function StaffPage() {
               <p className="text-3xl font-bold">{staffData.length}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">Departments</CardTitle>
@@ -295,11 +330,15 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Set(staffData.map(staff => staff.subject)).size}
+                {
+                  new Set(
+                    staffData.map((staff) => staff.subject_specialization)
+                  ).size
+                }
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-1">
               <CardTitle className="text-lg">New Staff</CardTitle>
@@ -307,15 +346,19 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {staffData.filter(staff => 
-                  staff.joiningDate.getMonth() === new Date().getMonth() && 
-                  staff.joiningDate.getFullYear() === new Date().getFullYear()
-                ).length}
+                {
+                  staffData.filter(
+                    (staff) =>
+                      staff.joiningDate.getMonth() === new Date().getMonth() &&
+                      staff.joiningDate.getFullYear() ===
+                        new Date().getFullYear()
+                  ).length
+                }
               </p>
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Staff Table with Add Staff Button */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <div className="flex justify-between items-center mb-6">
@@ -327,7 +370,7 @@ export default function StaffPage() {
                   Add Staff
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)}>
                     <DialogHeader>
@@ -335,138 +378,168 @@ export default function StaffPage() {
                         {editingStaff ? "Edit Staff" : "Add New Staff"}
                       </DialogTitle>
                       <DialogDescription>
-                        {editingStaff 
-                          ? "Update the staff member's information" 
+                        {editingStaff
+                          ? "Update the staff member's information"
                           : "Fill in the details to add a new staff member"}
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <FormField
-                        control={form.control}
-                        name="fullName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input placeholder="johndoe123" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="••••••••" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="john.doe@school.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="123-456-7890" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="subject"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Subject Specialization</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Mathematics" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="joiningDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Joining Date</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className="pl-3 text-left font-normal"
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
+
+                    <ScrollArea className="h-[60vh] pr-4">
+                      <div className="grid gap-4 py-4">
+                        <FormField
+                          control={form.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="John Doe" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Password</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder="••••••••"
+                                  {...field}
                                 />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <DialogFooter>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="john.doe@school.com"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="phone_number"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="123-456-7890" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Gender</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select gender" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="male">Male</SelectItem>
+                                  <SelectItem value="female">Female</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="subject_specialization"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subject Specialization</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Mathematics" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="joiningDate"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Joining Date</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className="pl-3 text-left font-normal"
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-auto p-0"
+                                  align="start"
+                                >
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) =>
+                                      date > new Date() ||
+                                      date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className="mt-4">
                       <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : editingStaff ? "Update Staff" : "Add Staff"}
+                        {isSubmitting
+                          ? "Saving..."
+                          : editingStaff
+                          ? "Update Staff"
+                          : "Add Staff"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -474,8 +547,8 @@ export default function StaffPage() {
               </DialogContent>
             </Dialog>
           </div>
-          
-          <DataTable 
+
+          {/* <DataTable
             data={staffData}
             columns={columns}
             searchPlaceholder="Search staff..."
@@ -483,21 +556,25 @@ export default function StaffPage() {
               console.log("Search query:", query);
               // Implement search logic in a real app
             }}
-          />
+          /> */}
         </div>
       </div>
-      
+
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this staff member? This action cannot be undone.
+              Are you sure you want to remove this staff member? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>

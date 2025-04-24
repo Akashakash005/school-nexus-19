@@ -53,9 +53,10 @@ export const teachers = pgTable("teachers", {
   full_name: text("full_name").notNull(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  gender:text("gender").notNull(),
   subject_specialization: text("subject_specialization").notNull(),
-  phone_number: text("phone_number").notNull(),
   joining_date: date("joining_date").notNull(),
+  phone_number: text("phone_number").notNull(),
 });
 
 export const insertTeacherSchema = createInsertSchema(teachers).omit({
