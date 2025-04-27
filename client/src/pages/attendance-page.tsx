@@ -360,7 +360,7 @@ export default function AttendancePage() {
 
       setTeacherSearchQuery("");
       setTeachersToMark([]);
-    } else if (attendanceType === "teacher") {
+    } else if (attendanceType === "staff") {
       setSelectedClass("");
       setSearchQuery("");
       setStudentsToMark([]);
@@ -381,7 +381,7 @@ export default function AttendancePage() {
   );
 
   //handle mark attendance
-  function handleAttendanceTypeChange(type: "student" | "teacher") {
+  function handleAttendanceTypeChange(type: "student" | "staff") {
     setAttendanceType(type);
 
     if (type === "student") {
@@ -390,7 +390,7 @@ export default function AttendancePage() {
 
       setTeacherSearchQuery("");
       setTeachersToMark([]);
-    } else if (type === "teacher") {
+    } else if (type === "staff") {
       // reset student-related state
       setSelectedClass("");
       setSearchQuery("");
@@ -444,6 +444,64 @@ export default function AttendancePage() {
 
               {/* Middle Column - Class Selection */}
               {user?.role === "student" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Select Class</CardTitle>
+                    <CardDescription>
+                      Choose the class to mark attendance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Select
+                      onValueChange={handleClassChange}
+                      value={selectedClass}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sampleClasses.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedClass && (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-success-100 text-success"
+                          >
+                            Present: {presentCount}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="bg-destructive-100 text-destructive"
+                          >
+                            Absent: {absentCount}
+                          </Badge>
+                        </div>
+                        <Progress
+                          value={attendancePercentage}
+                          className="h-2"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Attendance:{" "}
+                          <span className="font-medium">
+                            {attendancePercentage}%
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* for teacher attendance */}
+              {user?.role === "staff" && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Select Class</CardTitle>

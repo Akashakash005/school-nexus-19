@@ -51,12 +51,15 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
+import { StaffItem } from "./type";
+import { StackOffsetType } from "recharts/types/util/types";
 // Staff form schema
 const staffFormSchema = z
   .object({
     email: z.string().email("Please enter a valid email"),
 
     password: z.string().min(6, "Password must be at least 6 characters"),
+    status: z.enum(["Active", "Inactive"]),
     confirmPassword: z
       .string()
       .min(6, "Confirm password must be at least 6 characters"),
@@ -66,7 +69,7 @@ const staffFormSchema = z
       .string()
       .min(1, "Subject specialization is required"),
     gender: z.string().min(1, "Subject Gender is required"),
-    joiningDate: z.date({
+    joining_date: z.date({
       required_error: "Joining date is required",
     }),
   })
@@ -76,18 +79,6 @@ const staffFormSchema = z
   });
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
-interface StaffData {
-  id: number;
-
-  full_name: string;
-  email: string;
-  gender: "male" | "female" | "other";
-  joiningDate: Date;
-  status: string;
-  address: string;
-  phone_number: string;
-  subject_specialization: string;
-}
 
 /**
  * Staff management page component
@@ -97,17 +88,33 @@ export default function StaffPage() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [staffData, setStaffData] = useState<StaffData[]>([]);
+  const [staffData, setStaffData] = useState<StaffItem[]>([]);
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
+  const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null); // Added type
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<number | null>(null);
+  const form = useForm<StaffFormValues>({
+    resolver: zodResolver(staffFormSchema),
+    defaultValues: {
+      full_name: "",
 
+      email: "",
+      password: "",
+      confirmPassword: "",
+      subject_specialization: "",
+      gender: "male",
+      joining_date: new Date(),
+      phone_number: "",
+    },
+  });
+
+  //fetch staff
   const fetchStaff = async () => {
     try {
       const res = await fetch("/api/schools/1/teachers");
       if (!res.ok) throw new Error("Failed to fetch staff");
       const data = await res.json();
+      console.log("staff datas::", data);
       setStaffData(data);
     } catch (error) {
       toast({
@@ -117,7 +124,10 @@ export default function StaffPage() {
       });
     }
   };
-
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+  //create a staff
   const createStaff = async (data: StaffFormValues) => {
     try {
       // 1. Create user
@@ -146,7 +156,7 @@ export default function StaffPage() {
           ...data,
           user_id: userId,
           school_id: 1, // make dynamic if needed
-          joining_date: data.joiningDate ?? "2024-06-01", // fallback default
+          joining_date: data.joining_date ?? "2024-06-01", // fallback default
         }),
       });
 
@@ -163,24 +173,33 @@ export default function StaffPage() {
     }
   };
 
-  const [editingStaff, setEditingStaff] = useState<StaffData | null>(null); // Added type
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [staffToDelete, setStaffToDelete] = useState<number | null>(null);
+  //toggle staff status
+  const toggleStaffStatus = async (staff: StaffItem) => {
+    const newStatus = staff.status === "Active" ? "Inactive" : "Active";
 
-  const form = useForm<StaffFormValues>({
-    resolver: zodResolver(staffFormSchema),
-    defaultValues: {
-      full_name: "",
+    try {
+      const res = await fetch(`/api/teachers/${staff.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-      email: "",
-      password: "",
-      confirmPassword: "",
-      subject_specialization: "",
-      gender: "male",
-      joiningDate: new Date(),
-      phone_number: "",
-    },
-  });
+      if (!res.ok) throw new Error("Failed to update status");
+
+      toast({
+        title: "Success",
+        description: `Status changed to ${newStatus}`,
+      });
+
+      await fetchStaff(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Reset form when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
@@ -192,7 +211,7 @@ export default function StaffPage() {
   };
 
   // Set form values when editing
-  const openEditDialog = (staff: StaffData) => {
+  const openEditDialog = (staff: StaffItem) => {
     setEditingStaff(staff);
     form.reset({
       email: staff.email,
@@ -202,7 +221,7 @@ export default function StaffPage() {
       full_name: staff.full_name,
       phone_number: staff.phone_number,
       subject_specialization: staff.subject_specialization,
-      joiningDate: staff.joiningDate,
+      joining_date: staff.joining_date,
     });
     setIsDialogOpen(true);
   };
@@ -248,22 +267,49 @@ export default function StaffPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (staffToDelete) {
+  const confirmDelete = async () => {
+    if (!staffToDelete) return;
+
+    try {
+      const response = await fetch(`/api/teachers/${staffToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast({
+            title: "Error",
+            description: "Teacher not found",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error("Failed to delete teacher");
+        }
+        return;
+      }
+
+      // Update UI only if deletion is successful
       setStaffData((prev) =>
         prev.filter((staff) => staff.id !== staffToDelete)
       );
       toast({
         title: "Success",
-        description: "Student removed successfully",
+        description: "Teacher removed successfully",
       });
       setIsDeleteModalOpen(false);
       setStaffToDelete(null);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while deleting the teacher",
+        variant: "destructive",
+      });
     }
   };
 
   // DataTable columns configuration
-  const columns: DataTableColumn<StaffData>[] = [
+  const columns: DataTableColumn<StaffItem>[] = [
     {
       header: "Name",
       accessorKey: "full_name",
@@ -282,21 +328,30 @@ export default function StaffPage() {
     },
     {
       header: "Joining Date",
-      accessorKey: "joiningDate",
+      accessorKey: "joining_date",
       cell: (staff: any) => {
-        const date = new Date(staff.joiningDate);
+        const date = new Date(staff.joining_date);
         return isNaN(date.getTime()) ? "-" : format(date, "PPP");
       },
     },
     {
       header: "Status",
       accessorKey: "status",
-      cell: (staff: any) => (
-        <Badge variant="outline" className="bg-green-100 text-green-800">
+      cell: (staff: StaffItem) => (
+        <Button
+          variant={staff.status === "Active" ? "outline" : "secondary"}
+          className={`text-sm px-3 py-1 rounded-full ${
+            staff.status === "Active"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+          }`}
+          onClick={() => toggleStaffStatus(staff)}
+        >
           {staff.status}
-        </Badge>
+        </Button>
       ),
     },
+
     {
       header: "Actions",
       accessorKey: "id",
@@ -362,10 +417,10 @@ export default function StaffPage() {
                 {
                   staffData.filter(
                     (staff) =>
-                      staff.joiningDate &&
-                      new Date(staff.joiningDate).getMonth() ===
+                      staff.joining_date &&
+                      new Date(staff.joining_date).getMonth() ===
                         new Date().getMonth() &&
-                      new Date(staff.joiningDate).getFullYear() ===
+                      new Date(staff.joining_date).getFullYear() ===
                         new Date().getFullYear()
                   ).length
                 }
@@ -522,7 +577,7 @@ export default function StaffPage() {
 
                         <FormField
                           control={form.control}
-                          name="joiningDate"
+                          name="joining_date"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
                               <FormLabel>Joining Date</FormLabel>
@@ -558,6 +613,33 @@ export default function StaffPage() {
                                   />
                                 </PopoverContent>
                               </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Active">Active</SelectItem>
+                                  <SelectItem value="Inactive">
+                                    Inactive
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

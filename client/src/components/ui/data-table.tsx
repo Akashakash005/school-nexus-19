@@ -87,7 +87,7 @@ export function DataTable<T>({
       {/* Main table */}
       <div className="rounded-md border">
         <Table>
-          <TableHeader>
+          <TableHeader className="">
             <TableRow>
               {columns.map((column, index) => (
                 <TableHead key={index}>{column.header}</TableHead>

@@ -52,11 +52,12 @@ export const teachers = pgTable("teachers", {
   user_id: integer("user_id").notNull().references(() => users.id),
   school_id: integer("school_id").notNull().references(() => schools.id),
   full_name: text("full_name").notNull(),
-  password: text("password").notNull(),
+  email: text("email").notNull(),
   gender:text("gender").notNull(),
   subject_specialization: text("subject_specialization").notNull(),
   joining_date: date("joining_date").notNull(),
   phone_number: text("phone_number").notNull(),
+  status:text("status").notNull(),
 });
 
 export const insertTeacherSchema = createInsertSchema(teachers).omit({
@@ -78,6 +79,7 @@ export const students = pgTable("students", {
   parent_name: text("parent_name"),
   parent_contact: text("parent_contact"),
   parent_address: text("parent_address"),
+  status:text("status").notNull(),
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/layout/dashboard-layout";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, DataTableColumn } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,178 +32,295 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Edit, FolderPlus, Trash, Users } from "lucide-react";
+import { storage } from "server/storage";
+import { useAuth } from "@/hooks/use-auth";
+import { messages } from "@shared/schema";
+import { ClassItem, SchoolItem, StaffItem } from "./type";
 
 // Class form schema
-const classFormSchema = z.object({
+const formSchema = z.object({
   grade: z.string().min(1, "Grade is required"),
   section: z.string().min(1, "Section is required"),
-  classTeacherId: z.string().optional(),
+  class_teacher_id: z.number().optional(), // optional if needed
 });
 
-type ClassFormValues = z.infer<typeof classFormSchema>;
-
-// Sample class data
-const sampleClassData = [
-  {
-    id: 1,
-    name: "Class 8A",
-    section: "A",
-    classTeacherName: "John Doe",
-    studentCount: 42,
-  },
-  {
-    id: 2,
-    name: "Class 8B",
-    section: "B",
-    classTeacherName: "Jane Smith",
-    studentCount: 38,
-  },
-  {
-    id: 3,
-    name: "Class 9A",
-    section: "A",
-    classTeacherName: "Bob Johnson",
-    studentCount: 45,
-  },
-  {
-    id: 4,
-    name: "Class 9B",
-    section: "B",
-    classTeacherName: "Sarah Williams",
-    studentCount: 40,
-  },
-  {
-    id: 5,
-    name: "Class 10A",
-    section: "A",
-    classTeacherName: "Michael Brown",
-    studentCount: 38,
-  },
-  {
-    id: 6,
-    name: "Class 10B",
-    section: "B",
-    classTeacherName: "Emily Davis",
-    studentCount: 36,
-  },
-];
-
 // Sample teachers for dropdown
-const sampleTeachers = [
-  { id: "1", name: "John Doe" },
-  { id: "2", name: "Jane Smith" },
-  { id: "3", name: "Bob Johnson" },
-  { id: "4", name: "Sarah Williams" },
-  { id: "5", name: "Michael Brown" },
-  { id: "6", name: "Emily Davis" },
-];
 
 /**
  * Classes management page component
  * Allows school admins to manage class structures
  */
 export default function ClassesPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [classData, setClassData] = useState(sampleClassData);
-  const [editingClass, setEditingClass] = useState<typeof sampleClassData[0] | null>(null);
+  const [classData, setClassData] = useState<ClassItem[]>([]);
+  const [schoolData, setSchoolData] = useState<SchoolItem | null>(null);
+
+  const [editingClass, setEditingClass] = useState<ClassItem | undefined>(
+    undefined
+  );
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<number | null>(null);
+  const [staffData, setStaffData] = useState<StaffItem[]>([]);
+  const [class_name, setClassName] = useState("");
 
-  // Initialize form
-  const form = useForm<ClassFormValues>({
-    resolver: zodResolver(classFormSchema),
+  //initialise form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       grade: "",
       section: "",
-      classTeacherId: "",
-    }
+      class_teacher_id: undefined,
+    },
   });
+  const fetchStaff = async () => {
+    try {
+      if (user?.role === "staff") {
+        console.log("fetching staff detail");
+        const res = await fetch(`/api/Teachers/${user?.email}/staff`);
+        if (!res.ok) throw new Error("Failed to fetch staff");
+        const data = await res.json();
+        console.log("staff datas::", data);
+        setStaffData(data);
+      } else if (user?.role === "school_admin") {
+        console.log(
+          "fetching staff details as admin , schooldata id",
+          schoolData?.id
+        );
+        const res = await fetch(`/api/schools/${schoolData?.id}/teachers`);
+        if (!res.ok) throw new Error("Failed to fetch staff");
+        const data = await res.json();
+        console.log("staff datas::", data);
+        setStaffData(data);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load staff list",
+        variant: "destructive",
+      });
+    }
+  };
+  const fetchSchool = async () => {
+    try {
+      if (user?.role === "school_admin") {
+        console.log("calling to fetch school by user email");
+        const res = await fetch(`/api/school/${user?.email}`);
+        if (!res.ok) throw new Error("Failed to fetch school");
+        const data = await res.json();
 
-  // Set form values when editing
-  const openEditDialog = (classItem: typeof sampleClassData[0]) => {
-    setEditingClass(classItem);
+        console.log("school datas::", data);
+        // setClassName(`Class ${data.grade}${data.section}`);
 
-    // Find the teacher ID based on teacher name
-    const teacherItem = sampleTeachers.find(t => t.name === classItem.classTeacherName);
-    const teacherId = teacherItem ? teacherItem.id : "";
+        setSchoolData(data);
+      } else if (user?.role === "staff") {
+        console.log(
+          "calling to fetch school by staff schoolid",
+          staffData,
+          "school id",
+          staffData[0]?.school_id
+        );
+        //staffData[0]?.school_id because staffData is an array, not a direct object.
 
-    // Extract grade from class name (e.g., "Class 8A" -> "8")
-    const grade = classItem.name.split(" ")[1].charAt(0);
+        // Arrays don't have a property like school_id; individual elements inside the array have that.
 
-    form.reset({
-      grade: grade,
-      section: classItem.section,
-      classTeacherId: teacherId,
-    });
-    setIsDialogOpen(true);
+        const res = await fetch(`/api/schools/${staffData[0]?.school_id}`);
+        if (!res.ok) throw new Error("Failed to fetch school");
+        const data = await res.json();
+
+        console.log("school datas::", data);
+        // setClassName(`Class ${data.grade}${data.section}`);
+
+        setSchoolData(data);
+      }
+    } catch (error) {
+      console.log("school error: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to load school list",
+        variant: "destructive",
+      });
+    }
+  };
+  const fetchClass = async () => {
+    try {
+      console.log("fetching class for school:", schoolData);
+      const res = await fetch(`/api/schools/${schoolData?.id}/classes`);
+
+      if (!res.ok) throw new Error("Failed to fetch class");
+      const data = await res.json();
+      console.log("class datas::", data);
+      setClassName(`Class ${data.grade}${data.section}`);
+
+      setClassData(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load class list",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Reset form when dialog closes
+  if (user?.role === "staff") {
+    //fetcch staff first
+    useEffect(() => {
+      fetchStaff();
+    }, []);
+    //using the schoolid from staff fetch school
+    useEffect(() => {
+      if (staffData) {
+        fetchSchool();
+      }
+    }, [staffData]);
+  } else {
+    //fetch school first by school id from admin
+
+    useEffect(() => {
+      fetchSchool();
+    }, []);
+    //fetch school by school id
+
+    useEffect(() => {
+      if (schoolData) {
+        fetchStaff();
+      }
+    }, [schoolData]);
+  }
+
+  useEffect(() => {
+    if (schoolData && staffData) {
+      fetchClass();
+    }
+  }, [schoolData]);
+
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
       form.reset();
-      setEditingClass(null);
+      setEditingClass(undefined); // <== Important
     }
     setIsDialogOpen(open);
   };
 
+  const openEditDialog = (classItem?: (typeof classData)[0]) => {
+    if (classItem) {
+      // Edit existing class
+      setEditingClass(classItem);
+
+      form.reset({
+        grade: classItem.grade ?? "",
+        section: classItem.section ?? "",
+        class_teacher_id: classItem.class_teacher_id ?? undefined,
+      });
+    } else {
+      // Create new class
+      setEditingClass(undefined);
+
+      form.reset({
+        grade: "",
+        section: "",
+        class_teacher_id: undefined,
+      });
+    }
+
+    setIsDialogOpen(true);
+  };
+
+  //create class
+  const createClass = async (data: {
+    grade: string;
+    section: string;
+    school_id: number;
+    class_teacher_id?: number;
+  }) => {
+    console.log("creating class:: ", data);
+    const res = await fetch("/api/classes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw errData;
+    }
+
+    return res.json();
+  };
+  //update a class
+  const updateClass = async (
+    id: number,
+    data: { grade: string; section: string; class_teacher_id?: number }
+  ) => {
+    const res = await fetch(`/api/classes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw errData;
+    }
+
+    return res.json();
+  };
+
   // Handle form submission for creating/editing classes
-  const onSubmit = (data: ClassFormValues) => {
-    setIsSubmitting(true);
-
-    setTimeout(() => {
-      // Get teacher name from teacher ID
-      const selectedTeacher = sampleTeachers.find(t => t.id === data.classTeacherId);
-      const teacherName = selectedTeacher ? selectedTeacher.name : "";
-
-      // Create class name from grade and section
-      const className = `Class ${data.grade}${data.section}`;
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsSubmitting(true); // Optional: show spinner if needed
 
       if (editingClass) {
-        // Update existing class
-        setClassData(classData.map(cls => 
-          cls.id === editingClass.id 
-            ? { 
-                ...cls, 
-                name: className,
-                section: data.section,
-                classTeacherName: teacherName,
-              } 
-            : cls
-        ));
+        await updateClass(editingClass.id, {
+          grade: values.grade,
+          section: values.section,
+          class_teacher_id: values.class_teacher_id,
+        });
         toast({
-          title: "Class Updated",
-          description: `${className} has been updated successfully.`,
+          title: "Success",
+          description: "Class updated successfully!",
         });
       } else {
-        // Create new class
-        setClassData([
-          ...classData,
-          {
-            id: classData.length + 1,
-            name: className,
-            section: data.section,
-            classTeacherName: teacherName,
-            studentCount: 0,
-          }
-        ]);
+        await createClass({
+          grade: values.grade,
+          section: values.section,
+          school_id: schoolData?.id as number,
+          class_teacher_id: values.class_teacher_id,
+        });
         toast({
-          title: "Class Added",
-          description: `${className} has been added successfully.`,
+          title: "Success",
+          description: "New class created successfully!",
         });
       }
 
-      setIsSubmitting(false);
-      setIsDialogOpen(false);
       form.reset();
-      setEditingClass(null);
-    }, 1000);
+      setIsDialogOpen(false);
+      setEditingClass(undefined);
+      await fetchClass(); // ✅ Refetch updated class list
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: error?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle class deletion
@@ -212,33 +329,60 @@ export default function ClassesPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (classToDelete !== null) {
-      // Delete class
-      setClassData(classData.filter(cls => cls.id !== classToDelete));
-      toast({
-        title: "Class Removed",
-        description: "The class has been removed successfully.",
-      });
-      setIsDeleteModalOpen(false);
-      setClassToDelete(null);
+      try {
+        const res = await fetch(`/api/classes/${classToDelete}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) throw new Error("Delete failed");
+
+        setClassData(classData.filter((cls) => cls.id !== classToDelete));
+        toast({
+          title: "Class Removed",
+          description: "The class has been removed successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete class.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleteModalOpen(false);
+        setClassToDelete(null);
+      }
     }
   };
 
   // DataTable columns configuration
-  const columns = [
+  const columns: DataTableColumn<ClassItem>[] = [
     {
-      header: "Class Name",
-      accessorKey: "name",
+      header: "Class",
+      accessorKey: "id",
+      cell: (classItem: ClassItem) => {
+        // Return the formatted class name if class exists
+        return `Class ${classItem.grade} ${classItem.section}`;
+      },
     },
-    {
-      header: "Section",
-      accessorKey: "section",
-    },
+
     {
       header: "Class Teacher",
-      accessorKey: "classTeacherName",
+      accessorKey: "class_teacher_id",
+      cell: (classItem: ClassItem) => {
+        if (Array.isArray(staffData)) {
+          const teacher = staffData.find(
+            (staff) => staff.id === classItem.class_teacher_id
+          );
+          return teacher?.full_name || "Unknown";
+        } else {
+          console.error("staffData is not an array", staffData);
+          return "Unknown";
+        }
+      },
     },
+
     {
       header: "Students",
       accessorKey: "studentCount",
@@ -253,10 +397,18 @@ export default function ClassesPage() {
       accessorKey: "id",
       cell: (cls: any) => (
         <div className="flex space-x-2">
-          <Button variant="ghost" size="icon" onClick={() => openEditDialog(cls)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openEditDialog(cls)}
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(cls.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(cls.id)}
+          >
             <Trash className="h-4 w-4" />
           </Button>
         </div>
@@ -298,8 +450,13 @@ export default function ClassesPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {classData.length > 0 
-                  ? Math.round(classData.reduce((sum, cls) => sum + cls.studentCount, 0) / classData.length) 
+                {classData.length > 0
+                  ? Math.round(
+                      classData.reduce(
+                        (sum, cls) => sum + cls.studentCount,
+                        0
+                      ) / classData.length
+                    )
                   : 0}
               </p>
             </CardContent>
@@ -308,39 +465,64 @@ export default function ClassesPage() {
 
         {/* Class Distribution by Grade */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-semibold mb-4">Class Distribution by Grade</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Class Distribution by Grade
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] overflow-y-auto">
-            {Array.from(new Set(classData.map(cls => cls.name.match(/\d+/)?.[0] || ''))).sort((a, b) => Number(a) - Number(b)).map((grade) => {
-              const gradeClasses = classData.filter(cls => cls.name.includes(`Class ${grade}`));
-              const totalStudents = gradeClasses.reduce((sum, cls) => sum + cls.studentCount, 0);
+            {Array.from(
+              new Set(
+                classData.map(
+                  (cls) => cls.grade // No need for `.match(/\d+/)` if you store grade as string/number directly
+                )
+              )
+            )
+              .sort((a, b) => Number(a) - Number(b))
+              .map((grade) => {
+                const gradeClasses = classData.filter(
+                  (cls) => cls.grade === grade
+                );
+                const totalStudents = gradeClasses.reduce(
+                  (sum, cls) => sum + cls.studentCount,
+                  0
+                );
 
-              return (
-                <div key={grade} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">Grade {grade}</h3>
-                    <Badge variant="outline">{gradeClasses.length} classes</Badge>
-                  </div>
-                  <p className="text-2xl font-bold">{totalStudents} students</p>
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {gradeClasses.map(cls => {
-                      // Extract section from class name (e.g., "Class 8A" -> "A")
-                      const section = cls.section;
+                return (
+                  <div key={grade} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-medium">Grade {grade}</h3>
+                      <Badge variant="outline">
+                        {gradeClasses.length} classes
+                      </Badge>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {totalStudents} students
+                    </p>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {gradeClasses.map((cls) => {
+                        // Extract section from class name (e.g., "Class 8A" -> "A")
+                        const section = cls.section;
 
-                      return (
-                        <div 
-                          key={cls.id} 
-                          className="flex justify-between p-2 my-1 bg-blue-50 rounded-md cursor-pointer hover:bg-blue-100 transition-colors duration-200"
-                          onClick={() => navigate(`/classes/${grade}/${section}`)}
-                        >
-                          <span className="font-medium">{cls.name}</span>
-                          <span>{cls.studentCount} students</span>
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div
+                            key={cls.id}
+                            className="flex justify-between p-2 my-1 bg-blue-50 rounded-md cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+                            onClick={() =>
+                              navigate(`/classes/${grade}/${section}`)
+                            }
+                          >
+                            <span className="font-medium">
+                              Class {cls.grade}
+                              {cls.section}
+                            </span>
+
+                            <span>{cls.studentCount} students</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 
@@ -350,7 +532,8 @@ export default function ClassesPage() {
             <h2 className="text-xl font-semibold">Class List</h2>
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
-                <Button>
+                {/* to reset the form when switch edit to create  */}
+                <Button onClick={() => openEditDialog(undefined)}>
                   <FolderPlus className="mr-2 h-4 w-4" />
                   Add Class
                 </Button>
@@ -363,8 +546,8 @@ export default function ClassesPage() {
                         {editingClass ? "Edit Class" : "Add New Class"}
                       </DialogTitle>
                       <DialogDescription>
-                        {editingClass 
-                          ? "Update the class information" 
+                        {editingClass
+                          ? "Update the class information"
                           : "Fill in the details to add a new class"}
                       </DialogDescription>
                     </DialogHeader>
@@ -375,8 +558,8 @@ export default function ClassesPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Grade</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -386,7 +569,10 @@ export default function ClassesPage() {
                               </FormControl>
                               <SelectContent>
                                 {[...Array(12)].map((_, i) => (
-                                  <SelectItem key={i + 1} value={(i + 1).toString()}>
+                                  <SelectItem
+                                    key={i + 1}
+                                    value={(i + 1).toString()}
+                                  >
                                     Grade {i + 1}
                                   </SelectItem>
                                 ))}
@@ -403,8 +589,8 @@ export default function ClassesPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Section</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
@@ -413,11 +599,13 @@ export default function ClassesPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {['A', 'B', 'C', 'D', 'E', 'F'].map((section) => (
-                                  <SelectItem key={section} value={section}>
-                                    Section {section}
-                                  </SelectItem>
-                                ))}
+                                {["A", "B", "C", "D", "E", "F"].map(
+                                  (section) => (
+                                    <SelectItem key={section} value={section}>
+                                      Section {section}
+                                    </SelectItem>
+                                  )
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -425,15 +613,18 @@ export default function ClassesPage() {
                         )}
                       />
 
+                      {/* Class Teacher Field */}
                       <FormField
                         control={form.control}
-                        name="classTeacherId"
+                        name="class_teacher_id"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Class Teacher</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(Number(value))
+                              }
+                              defaultValue={field.value?.toString()}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -441,9 +632,12 @@ export default function ClassesPage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {sampleTeachers.map(teacher => (
-                                  <SelectItem key={teacher.id} value={teacher.id}>
-                                    {teacher.name}
+                                {staffData.map((staff) => (
+                                  <SelectItem
+                                    key={staff.id}
+                                    value={staff.id.toString()}
+                                  >
+                                    {staff.full_name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -454,8 +648,8 @@ export default function ClassesPage() {
                       />
                     </div>
                     <DialogFooter>
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : editingClass ? "Update Class" : "Add Class"}
+                      <Button type="submit">
+                        {editingClass ? "Update Class" : "Create Class"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -464,7 +658,7 @@ export default function ClassesPage() {
             </Dialog>
           </div>
 
-          <DataTable 
+          <DataTable
             data={classData}
             columns={columns}
             searchPlaceholder="Search classes..."
@@ -482,11 +676,15 @@ export default function ClassesPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this class? This action cannot be undone.
+              Are you sure you want to remove this class? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
