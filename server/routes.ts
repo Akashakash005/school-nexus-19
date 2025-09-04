@@ -15,6 +15,7 @@ import {
   insertMessageSchema,
   insertClassMessageSchema,
   insertExamSchema,
+  insertExamSubjectSchema,
   insertFeeStructureSchema,
   insertFeePaymentSchema,
   insertBillSchema,
@@ -927,6 +928,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(exams);
       } catch (error) {
         res.status(500).json({ message: "Failed to fetch class exams", error });
+      }
+    }
+  );
+
+  // Update an exam
+  app.put(
+    "/api/exams/:id",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const examData = insertExamSchema.partial().parse(req.body);
+        
+        const updatedExam = await storage.updateExam(id, examData);
+        if (!updatedExam) {
+          return res.status(404).json({ message: "Exam not found" });
+        }
+        
+        res.json(updatedExam);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ message: "Validation failed", errors: error.errors });
+        }
+        res.status(500).json({ message: "Failed to update exam", error });
+      }
+    }
+  );
+
+  // Delete an exam
+  app.delete(
+    "/api/exams/:id",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const success = await storage.deleteExam(id);
+        
+        if (!success) {
+          return res.status(404).json({ message: "Exam not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        res.status(500).json({ message: "Failed to delete exam", error });
+      }
+    }
+  );
+
+  // ============ Exam Subjects Routes ============
+
+  // Create an exam subject
+  app.post(
+    "/api/exam-subjects",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const examSubjectData = insertExamSubjectSchema.parse(req.body);
+        const newExamSubject = await storage.createExamSubject(examSubjectData);
+        res.status(201).json(newExamSubject);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ message: "Validation failed", errors: error.errors });
+        }
+        res.status(500).json({ message: "Failed to create exam subject", error });
+      }
+    }
+  );
+
+  // Get exam subjects by exam ID
+  app.get(
+    "/api/exams/:examId/subjects",
+    requireRole([
+      "super_admin",
+      "school_admin",
+      "teacher",
+      "student",
+      "parent",
+    ]),
+    async (req, res) => {
+      try {
+        const examId = parseInt(req.params.examId);
+        const examSubjects = await storage.getExamSubjectsByExamId(examId);
+        res.json(examSubjects);
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch exam subjects", error });
+      }
+    }
+  );
+
+  // Update an exam subject
+  app.put(
+    "/api/exam-subjects/:id",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const examSubjectData = insertExamSubjectSchema.partial().parse(req.body);
+        
+        const updatedExamSubject = await storage.updateExamSubject(id, examSubjectData);
+        if (!updatedExamSubject) {
+          return res.status(404).json({ message: "Exam subject not found" });
+        }
+        
+        res.json(updatedExamSubject);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ message: "Validation failed", errors: error.errors });
+        }
+        res.status(500).json({ message: "Failed to update exam subject", error });
+      }
+    }
+  );
+
+  // Delete an exam subject
+  app.delete(
+    "/api/exam-subjects/:id",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const success = await storage.deleteExamSubject(id);
+        
+        if (!success) {
+          return res.status(404).json({ message: "Exam subject not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        res.status(500).json({ message: "Failed to delete exam subject", error });
+      }
+    }
+  );
+
+  // Create multiple exam subjects for an exam
+  app.post(
+    "/api/exams/:examId/subjects/bulk",
+    requireRole(["super_admin", "school_admin"]),
+    async (req, res) => {
+      try {
+        const examId = parseInt(req.params.examId);
+        const { subjects } = req.body;
+        
+        if (!Array.isArray(subjects)) {
+          return res.status(400).json({ message: "Subjects must be an array" });
+        }
+        
+        const examSubjects = [];
+        for (const subject of subjects) {
+          const examSubjectData = insertExamSubjectSchema.parse({
+            ...subject,
+            exam_id: examId,
+          });
+          const newExamSubject = await storage.createExamSubject(examSubjectData);
+          examSubjects.push(newExamSubject);
+        }
+        
+        res.status(201).json(examSubjects);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ message: "Validation failed", errors: error.errors });
+        }
+        res.status(500).json({ message: "Failed to create exam subjects", error });
       }
     }
   );

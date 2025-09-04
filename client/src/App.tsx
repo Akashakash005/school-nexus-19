@@ -15,6 +15,7 @@ import ClassDetailPage from "@/pages/class-detail-page";
 import SubjectsPage from "@/pages/subjects-page";
 import AttendancePage from "@/pages/attendance-page";
 import FeesPage from "@/pages/fees-page";
+import ExamsPage from "@/pages/exams-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import BillsPage from "@/pages/bills-page";
 import MessagesPage from "@/pages/messages-page";
@@ -58,6 +59,7 @@ function Router() {
       />
       <ProtectedRoute path="/subjects" component={SubjectsPage} />
       <ProtectedRoute path="/attendance" component={AttendancePage} />
+      <ProtectedRoute path="/exams" component={ExamsPage} />
       <ProtectedRoute path="/fees" component={FeesPage} />
       <ProtectedRoute path="/bills" component={BillsPage} />
       <ProtectedRoute path="/messages" component={MessagesPage} />

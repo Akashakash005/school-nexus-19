@@ -216,6 +216,19 @@ export default function Sidebar({
                 </a>
               </Link>
 
+              <Link href="/exams">
+                <a
+                  className={
+                    location === "/exams"
+                      ? activeNavClass
+                      : inactiveNavClass
+                  }
+                >
+                  <FileText className="mr-3 h-4 w-4" />
+                  <span>Exams</span>
+                </a>
+              </Link>
+
               {user?.role === "school_admin" && (
                 <>
                   <Link href="/fees">

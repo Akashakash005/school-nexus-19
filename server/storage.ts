@@ -1028,6 +1028,23 @@ export class MemStorage implements IStorage {
   }
 
   async deleteExam(id: number): Promise<boolean> {
+    // First, get all exam subjects associated with this exam
+    const examSubjects = await this.getExamSubjectsByExamId(id);
+    
+    // Delete all marks associated with these exam subjects
+    for (const examSubject of examSubjects) {
+      const marks = await this.getMarksByExamSubjectId(examSubject.id);
+      for (const mark of marks) {
+        await this.deleteMark(mark.id);
+      }
+    }
+    
+    // Delete all exam subjects associated with this exam
+    for (const examSubject of examSubjects) {
+      await this.deleteExamSubject(examSubject.id);
+    }
+    
+    // Finally, delete the exam itself
     return this.examsMap.delete(id);
   }
 
